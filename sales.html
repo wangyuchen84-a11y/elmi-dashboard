@@ -394,13 +394,13 @@ canvas.clickable{cursor:pointer}
           <span class="kpi-v" style="color:var(--elmi-red)">1,017<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
           <div class="kpi-c">&#8594; sortiert nach Wahrsch.</div>
         </div>
-        <div class="kpi" style="cursor:pointer" onclick="showPage('forecast',document.querySelector('[onclick*=forecast]'))">
+        <div class="kpi" style="cursor:pointer" onclick="openYTDModal()">
           <span class="kpi-ey">Umsatz YTD 2026</span><span class="kpi-v" id="kpi-ytd">566 K</span>
           <div class="kpi-c"><i data-lucide="file-text" size="11"></i> Fakturiert &#8594;</div>
         </div>
-        <div class="kpi" style="cursor:pointer" onclick="showPage('forecast',document.querySelector('[onclick*=forecast]'))">
+        <div class="kpi" style="cursor:pointer" onclick="openOrdersModal()">
           <span class="kpi-ey">Auftragseingang</span><span class="kpi-v" id="kpi-orders">410 K</span>
-          <div class="kpi-c"><i data-lucide="trending-up" size="11"></i> Forecast &#8594;</div>
+          <div class="kpi-c"><i data-lucide="trending-up" size="11"></i> Best&#228;tigte Auftr&#228;ge &#8594;</div>
         </div>
         <div class="kpi" style="cursor:pointer" onclick="openDrawerByStageKey(4)">
           <span class="kpi-ey">Commitment Phase</span>
@@ -1688,6 +1688,68 @@ function closeOdooModal() {
   document.getElementById('odoo-modal-bg').classList.remove('open');
 }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeOdooModal(); });
+
+function openYTDModal() {
+  const months = [
+    {label:'März 2026',    value:1190},
+    {label:'April 2026',   value:262643},
+    {label:'Mai 2026',     value:302623},
+  ];
+  const total = months.reduce((s,m)=>s+m.value,0);
+  document.getElementById('odoo-m-title').textContent = 'Umsatz YTD 2026';
+  document.getElementById('odoo-m-sub').textContent = 'Fakturierter Umsatz Januar–Mai 2026';
+  document.getElementById('odoo-m-stats').innerHTML =
+    `<div class="odoo-m-stat">Monate: <strong>${months.length}</strong></div>`+
+    `<div class="odoo-m-stat">Gesamt fakturiert: <strong>${fmtE(total)}</strong></div>`;
+  document.getElementById('odoo-m-body').innerHTML = months.map(m=>`
+    <div class="odoo-deal-row">
+      <div class="odoo-deal-info">
+        <div class="odoo-deal-name">${m.label}</div>
+        <div class="odoo-deal-meta"><span>Fakturierter Umsatz</span></div>
+      </div>
+      <div style="font-family:var(--mono);font-weight:700;font-size:15px;color:var(--elmi-red);margin-left:auto;padding-right:20px">${fmtE(m.value)}</div>
+    </div>`).join('') +
+    `<div class="odoo-deal-row" style="background:var(--bg2)">
+      <div class="odoo-deal-info"><div class="odoo-deal-name" style="font-weight:800">Gesamt YTD</div></div>
+      <div style="font-family:var(--mono);font-weight:800;font-size:16px;color:var(--success);margin-left:auto;padding-right:20px">${fmtE(total)}</div>
+    </div>`;
+  document.getElementById('odoo-modal-bg').classList.add('open');
+  lucide.createIcons();
+}
+
+function openOrdersModal() {
+  const orderLids = new Set(ALL_ACTS2.filter(a=>a.ho===1).map(a=>a.lid));
+  const deals = [...orderLids].map(lid=>{
+    const lead = ALL_LEADS.find(l=>l.id===lid);
+    return lead || {id:lid, name:'Deal #'+lid, partner:'', revenue:0, stage:'', rep:''};
+  }).sort((a,b)=>b.revenue-a.revenue);
+  const total = deals.reduce((s,d)=>s+(d.revenue||0),0);
+  document.getElementById('odoo-m-title').textContent = 'Auftragseingang';
+  document.getElementById('odoo-m-sub').textContent = 'Deals mit bestätigtem Auftrag';
+  document.getElementById('odoo-m-stats').innerHTML =
+    `<div class="odoo-m-stat">Deals: <strong>${deals.length}</strong></div>`+
+    `<div class="odoo-m-stat">Pipeline-Volumen: <strong>${fmtE(total)}</strong></div>`;
+  document.getElementById('odoo-m-body').innerHTML = deals.length
+    ? deals.map((d,i)=>`
+      <div class="odoo-deal-row">
+        <div class="odoo-deal-num">${i+1}</div>
+        <div class="odoo-deal-info">
+          <div class="odoo-deal-name">${d.name}</div>
+          <div class="odoo-deal-meta">
+            <span>${d.partner||'—'}</span>
+            <span style="color:var(--fg3)">|</span>
+            <span>${d.stage||'—'}</span>
+            ${d.revenue?`<span style="color:var(--fg3)">|</span><span style="font-family:var(--mono);font-weight:600">${fmtE(d.revenue)}</span>`:''}
+          </div>
+        </div>
+        <a class="odoo-deal-link" href="${ODOO_BASE}/odoo/crm/${d.id}" target="_blank">
+          <i data-lucide="external-link" size="11"></i> Odoo
+        </a>
+      </div>`).join('')
+    : '<div style="padding:24px;text-align:center;color:var(--fg3)">Keine Deals mit Auftragseingang gefunden.</div>';
+  document.getElementById('odoo-modal-bg').classList.add('open');
+  lucide.createIcons();
+}
 
 // ── Helper for KPI cards on p5
 function kpi5(ey,val,cap,style){
