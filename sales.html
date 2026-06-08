@@ -341,6 +341,7 @@ canvas.clickable{cursor:pointer}
     <button class="nav-item" onclick="showPage('kunden',this)"><i data-lucide="users" size="16"></i> Kundengruppen</button>
     <button class="nav-item" onclick="showPage('forecast',this)"><i data-lucide="trending-up" size="16"></i> Forecast &amp; Historie</button>
     <button class="nav-item" id="nav-performance" onclick="showPage('performance',this);setTimeout(P5.apply.bind(P5),80)"><i data-lucide="activity" size="16"></i> Performance</button>
+    <button class="nav-item" id="nav-leads" onclick="showPage('leads',this);setTimeout(LI.init.bind(LI),80)"><i data-lucide="search" size="16"></i> Lead Intelligence</button>
   </div>
   <div class="s-sec">
     <div class="s-lbl">System</div>
@@ -723,6 +724,80 @@ canvas.clickable{cursor:pointer}
           </tr></thead><tbody id="p5-tbody"></tbody></table>
           <div id="p5-tmore" style="padding:8px 16px;font-size:12px;color:var(--fg2);border-top:1px solid var(--bd1)"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- PAGE: LEAD INTELLIGENCE -->
+    <div id="leads" class="page">
+      <div class="page-hdr">
+        <span class="eyebrow" style="margin-bottom:0">Lead Intelligence &mdash; Herkunft, Aktivit&#228;t &amp; Timing</span>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="kpi-grid" id="li-kpis"></div>
+
+      <!-- Herkunft -->
+      <span class="eyebrow" style="margin-top:18px">Lead-Herkunft &amp; Zufluss</span>
+      <div class="cgrid">
+        <div class="card"><div class="card-t">Inbound vs. Outbound <span>nach Erstinteraktion</span></div><div style="height:200px"><canvas id="li-c1"></canvas></div></div>
+        <div class="card"><div class="card-t">Monatlicher Zufluss <span>nach Erstellungsdatum</span></div><div style="height:200px"><canvas id="li-c2"></canvas></div></div>
+        <div class="card"><div class="card-t">Erstkanal <span>Wie wurde der Lead aktiv?</span></div><div style="height:200px"><canvas id="li-c3"></canvas></div></div>
+      </div>
+
+      <!-- Kundengruppe -->
+      <span class="eyebrow">Kundengruppe</span>
+      <div class="cgrid">
+        <div class="card wide"><div class="card-t">Leads &amp; Pipeline-Potenzial je Gruppe <span>Balken = Leads, Linie = gew. Revenue</span></div><div style="height:220px"><canvas id="li-c4"></canvas></div></div>
+        <div class="card"><div class="card-t">&#216; Interaktionen je Gruppe</div><div style="height:220px"><canvas id="li-c5"></canvas></div></div>
+      </div>
+
+      <!-- Aktivität & Timing -->
+      <span class="eyebrow">Aktivit&#228;t &amp; Timing</span>
+      <div class="cgrid">
+        <div class="card"><div class="card-t">Interaktionstiefe <span>Wie viele Kontakte hat ein Lead?</span></div><div style="height:200px"><canvas id="li-c6"></canvas></div></div>
+        <div class="card"><div class="card-t">Aktivit&#228;tstypen</div><div style="height:200px"><canvas id="li-c7"></canvas></div></div>
+        <div class="card"><div class="card-t">Zeit bis Erstinteraktion <span>Tage nach Erstellung</span></div><div style="height:200px"><canvas id="li-c8"></canvas></div></div>
+      </div>
+
+      <!-- Kalte Leads -->
+      <span class="eyebrow">&#9889; Handlungsbedarf</span>
+      <div class="kpi-grid" id="li-action-kpis"></div>
+
+      <!-- Lead Table -->
+      <span class="eyebrow" style="margin-top:8px">Lead-&#220;bersicht <span id="li-table-count" style="font-size:11px;color:var(--fg2);font-weight:400;text-transform:none;letter-spacing:0"></span></span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+        <select class="filter-sel" id="li-f-group" onchange="LI.renderTable()" style="height:30px;font-size:12px;width:140px"><option value="">Alle Gruppen</option></select>
+        <select class="filter-sel" id="li-f-dir" onchange="LI.renderTable()" style="height:30px;font-size:12px;width:140px">
+          <option value="">Inbound + Outbound</option>
+          <option value="inbound">Inbound</option>
+          <option value="outbound">Outbound</option>
+          <option value="unknown">Unbekannt</option>
+        </select>
+        <select class="filter-sel" id="li-f-cold" onchange="LI.renderTable()" style="height:30px;font-size:12px;width:160px">
+          <option value="">Alle Leads</option>
+          <option value="cold">Kalt (&gt;30 Tage)</option>
+          <option value="active">Aktiv</option>
+          <option value="never">Nie kontaktiert</option>
+        </select>
+        <input class="filter-sel" id="li-f-q" placeholder="Suche Lead..." oninput="LI.renderTable()" style="height:30px;font-size:12px;width:160px;padding:0 8px">
+      </div>
+      <div class="card" style="padding:0;overflow:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px" id="li-table">
+          <thead>
+            <tr style="border-bottom:2px solid var(--bd1);background:var(--bg2)">
+              <th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2)">Lead</th>
+              <th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2)">Gruppe</th>
+              <th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2)">Stage</th>
+              <th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2)">Rep</th>
+              <th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2)">Akt.</th>
+              <th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2)">Herkunft</th>
+              <th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2)">Letzte Akt.</th>
+              <th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2)">TTFI</th>
+              <th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2)">Revenue</th>
+            </tr>
+          </thead>
+          <tbody id="li-tbody"></tbody>
+        </table>
       </div>
     </div>
 
@@ -1908,6 +1983,373 @@ function getWeekNum5(d){
 })();
 
 lucide.createIcons();
+
+// ─── LEAD INTELLIGENCE ────────────────────────────────────────────────────────
+const LEAD_META = [{"id":638,"cr":"2026-06-02","med":""},{"id":615,"cr":"2026-05-28","med":""},{"id":610,"cr":"2026-05-27","med":""},{"id":607,"cr":"2026-05-26","med":""},{"id":593,"cr":"2026-05-21","med":""},{"id":586,"cr":"2026-05-21","med":""},{"id":583,"cr":"2026-05-21","med":""},{"id":578,"cr":"2026-05-20","med":""},{"id":576,"cr":"2026-05-20","med":""},{"id":573,"cr":"2026-05-20","med":"Website"},{"id":568,"cr":"2026-05-20","med":""},{"id":567,"cr":"2026-05-20","med":""},{"id":561,"cr":"2026-05-19","med":"Website"},{"id":556,"cr":"2026-05-19","med":"Website"},{"id":555,"cr":"2026-05-19","med":"Website"},{"id":544,"cr":"2026-05-11","med":""},{"id":542,"cr":"2026-05-08","med":""},{"id":520,"cr":"2026-05-07","med":""},{"id":511,"cr":"2026-05-01","med":""},{"id":506,"cr":"2026-04-29","med":""},{"id":496,"cr":"2026-04-24","med":""},{"id":495,"cr":"2026-04-24","med":""},{"id":494,"cr":"2026-04-24","med":""},{"id":491,"cr":"2026-04-22","med":"Website"},{"id":477,"cr":"2026-04-14","med":""},{"id":470,"cr":"2026-04-10","med":"Website"},{"id":465,"cr":"2026-04-08","med":""},{"id":445,"cr":"2026-03-30","med":""},{"id":431,"cr":"2026-03-30","med":""},{"id":424,"cr":"2026-03-28","med":""},{"id":423,"cr":"2026-03-27","med":"Website"},{"id":421,"cr":"2026-03-27","med":""},{"id":418,"cr":"2026-03-26","med":""},{"id":417,"cr":"2026-03-26","med":""},{"id":381,"cr":"2026-03-17","med":""},{"id":369,"cr":"2026-03-13","med":""},{"id":366,"cr":"2026-03-12","med":""},{"id":365,"cr":"2026-03-11","med":""},{"id":362,"cr":"2026-03-11","med":""},{"id":345,"cr":"2026-03-05","med":""},{"id":343,"cr":"2026-03-05","med":"Website"},{"id":336,"cr":"2026-03-04","med":""},{"id":299,"cr":"2026-03-03","med":""},{"id":296,"cr":"2026-03-03","med":""},{"id":272,"cr":"2026-02-27","med":""},{"id":267,"cr":"2026-02-27","med":""},{"id":252,"cr":"2026-02-27","med":"Website"},{"id":226,"cr":"2026-02-26","med":""},{"id":224,"cr":"2026-02-25","med":""},{"id":164,"cr":"2026-02-18","med":""},{"id":153,"cr":"2026-02-17","med":""},{"id":152,"cr":"2026-02-17","med":""},{"id":146,"cr":"2026-02-17","med":""},{"id":144,"cr":"2026-02-17","med":""},{"id":133,"cr":"2026-02-16","med":""},{"id":132,"cr":"2026-02-16","med":""},{"id":129,"cr":"2026-02-16","med":""},{"id":123,"cr":"2026-02-16","med":""},{"id":116,"cr":"2026-02-16","med":""},{"id":115,"cr":"2026-02-16","med":""},{"id":113,"cr":"2026-02-16","med":""},{"id":104,"cr":"2026-02-16","med":""},{"id":100,"cr":"2026-02-16","med":""},{"id":93,"cr":"2026-02-16","med":""},{"id":89,"cr":"2026-02-16","med":""},{"id":82,"cr":"2026-02-13","med":""},{"id":72,"cr":"2026-02-13","med":""},{"id":65,"cr":"2026-02-13","med":""},{"id":45,"cr":"2026-02-06","med":""},{"id":25,"cr":"2026-02-02","med":""},{"id":651,"cr":"2026-06-08","med":""},{"id":619,"cr":"2026-05-29","med":""},{"id":614,"cr":"2026-05-28","med":""},{"id":603,"cr":"2026-05-26","med":""},{"id":596,"cr":"2026-05-21","med":"Website"},{"id":595,"cr":"2026-05-21","med":"Website"},{"id":581,"cr":"2026-05-20","med":"Website"},{"id":570,"cr":"2026-05-20","med":"Website"},{"id":564,"cr":"2026-05-19","med":"Website"},{"id":560,"cr":"2026-05-19","med":"Website"},{"id":557,"cr":"2026-05-19","med":"Website"},{"id":525,"cr":"2026-05-08","med":""},{"id":487,"cr":"2026-04-21","med":""},{"id":484,"cr":"2026-04-17","med":""},{"id":416,"cr":"2026-03-26","med":"Website"},{"id":410,"cr":"2026-03-26","med":""},{"id":407,"cr":"2026-03-25","med":"Website"},{"id":404,"cr":"2026-03-25","med":"Website"},{"id":403,"cr":"2026-03-25","med":"Website"},{"id":395,"cr":"2026-03-25","med":"Website"},{"id":394,"cr":"2026-03-25","med":"Website"},{"id":359,"cr":"2026-03-10","med":""},{"id":344,"cr":"2026-03-05","med":""},{"id":332,"cr":"2026-03-03","med":""},{"id":277,"cr":"2026-03-03","med":""},{"id":263,"cr":"2026-02-27","med":""},{"id":260,"cr":"2026-02-27","med":""},{"id":254,"cr":"2026-02-27","med":""},{"id":249,"cr":"2026-02-27","med":"Website"},{"id":243,"cr":"2026-02-27","med":"Website"},{"id":240,"cr":"2026-02-27","med":"Website"},{"id":151,"cr":"2026-02-17","med":""},{"id":148,"cr":"2026-02-17","med":""},{"id":145,"cr":"2026-02-17","med":""},{"id":131,"cr":"2026-02-16","med":""},{"id":128,"cr":"2026-02-16","med":""},{"id":121,"cr":"2026-02-16","med":""},{"id":118,"cr":"2026-02-16","med":""},{"id":110,"cr":"2026-02-16","med":""},{"id":96,"cr":"2026-02-16","med":""},{"id":95,"cr":"2026-02-16","med":""},{"id":94,"cr":"2026-02-16","med":""},{"id":91,"cr":"2026-02-16","med":""},{"id":71,"cr":"2026-02-13","med":""},{"id":70,"cr":"2026-02-13","med":""},{"id":52,"cr":"2026-02-10","med":""},{"id":588,"cr":"2026-05-21","med":""},{"id":575,"cr":"2026-05-20","med":""},{"id":563,"cr":"2026-05-19","med":"Website"},{"id":558,"cr":"2026-05-19","med":"Website"},{"id":554,"cr":"2026-05-19","med":"Website"},{"id":453,"cr":"2026-04-02","med":""},{"id":451,"cr":"2026-03-31","med":""},{"id":448,"cr":"2026-03-31","med":""},{"id":422,"cr":"2026-03-27","med":""},{"id":415,"cr":"2026-03-26","med":"Website"},{"id":413,"cr":"2026-03-26","med":"Website"},{"id":405,"cr":"2026-03-25","med":"Website"},{"id":402,"cr":"2026-03-25","med":""},{"id":399,"cr":"2026-03-25","med":"Website"},{"id":398,"cr":"2026-03-25","med":"Website"},{"id":393,"cr":"2026-03-25","med":"Website"},{"id":375,"cr":"2026-03-16","med":""},{"id":371,"cr":"2026-03-15","med":"Website"},{"id":368,"cr":"2026-03-12","med":""},{"id":347,"cr":"2026-03-05","med":""},{"id":340,"cr":"2026-03-04","med":""},{"id":339,"cr":"2026-03-04","med":""},{"id":338,"cr":"2026-03-04","med":""},{"id":337,"cr":"2026-03-04","med":""},{"id":327,"cr":"2026-03-03","med":""},{"id":317,"cr":"2026-03-03","med":""},{"id":275,"cr":"2026-03-02","med":""},{"id":271,"cr":"2026-02-27","med":"Website"},{"id":264,"cr":"2026-02-27","med":""},{"id":259,"cr":"2026-02-27","med":""},{"id":258,"cr":"2026-02-27","med":""},{"id":257,"cr":"2026-02-27","med":""},{"id":253,"cr":"2026-02-27","med":"Website"},{"id":250,"cr":"2026-02-27","med":"Website"},{"id":223,"cr":"2026-02-24","med":""},{"id":220,"cr":"2026-02-24","med":"Website"},{"id":219,"cr":"2026-02-24","med":"Website"},{"id":192,"cr":"2026-02-20","med":""},{"id":149,"cr":"2026-02-17","med":""},{"id":135,"cr":"2026-02-16","med":""},{"id":126,"cr":"2026-02-16","med":""},{"id":108,"cr":"2026-02-16","med":""},{"id":101,"cr":"2026-02-16","med":""},{"id":97,"cr":"2026-02-16","med":""},{"id":92,"cr":"2026-02-16","med":""},{"id":85,"cr":"2026-02-16","med":""},{"id":69,"cr":"2026-02-13","med":""},{"id":63,"cr":"2026-02-13","med":""},{"id":32,"cr":"2026-02-04","med":""},{"id":15,"cr":"2026-02-02","med":""},{"id":650,"cr":"2026-06-08","med":"Website"},{"id":649,"cr":"2026-06-05","med":"Email"},{"id":648,"cr":"2026-06-05","med":"Website"},{"id":647,"cr":"2026-06-05","med":"Email"},{"id":645,"cr":"2026-06-03","med":"Website"},{"id":643,"cr":"2026-06-03","med":"Email"},{"id":642,"cr":"2026-06-02","med":"Website"},{"id":640,"cr":"2026-06-02","med":"Website"},{"id":637,"cr":"2026-06-02","med":"Email"},{"id":628,"cr":"2026-06-01","med":"Website"},{"id":626,"cr":"2026-06-01","med":""},{"id":622,"cr":"2026-06-01","med":"Website"},{"id":621,"cr":"2026-06-01","med":""},{"id":618,"cr":"2026-05-29","med":""},{"id":617,"cr":"2026-05-29","med":""},{"id":613,"cr":"2026-05-28","med":""},{"id":612,"cr":"2026-05-28","med":"Website"},{"id":611,"cr":"2026-05-27","med":""},{"id":608,"cr":"2026-05-26","med":""},{"id":605,"cr":"2026-05-26","med":""},{"id":602,"cr":"2026-05-26","med":""},{"id":599,"cr":"2026-05-22","med":""},{"id":598,"cr":"2026-05-22","med":"Website"},{"id":597,"cr":"2026-05-22","med":"Website"},{"id":592,"cr":"2026-05-21","med":"Website"},{"id":591,"cr":"2026-05-21","med":"Website"},{"id":590,"cr":"2026-05-21","med":""},{"id":589,"cr":"2026-05-21","med":""},{"id":587,"cr":"2026-05-21","med":"Website"},{"id":585,"cr":"2026-05-21","med":""},{"id":579,"cr":"2026-05-20","med":""},{"id":577,"cr":"2026-05-20","med":""},{"id":572,"cr":"2026-05-20","med":"Website"},{"id":571,"cr":"2026-05-20","med":"Website"},{"id":569,"cr":"2026-05-20","med":"Website"},{"id":566,"cr":"2026-05-20","med":""},{"id":547,"cr":"2026-05-13","med":""},{"id":546,"cr":"2026-05-11","med":""},{"id":541,"cr":"2026-05-08","med":"Website"},{"id":523,"cr":"2026-05-08","med":""},{"id":509,"cr":"2026-04-30","med":""},{"id":508,"cr":"2026-04-30","med":"Website"},{"id":507,"cr":"2026-04-30","med":"Website"},{"id":504,"cr":"2026-04-28","med":""},{"id":503,"cr":"2026-04-28","med":""},{"id":500,"cr":"2026-04-27","med":""},{"id":497,"cr":"2026-04-25","med":""},{"id":492,"cr":"2026-04-23","med":""},{"id":489,"cr":"2026-04-22","med":""},{"id":488,"cr":"2026-04-21","med":""},{"id":486,"cr":"2026-04-20","med":""},{"id":485,"cr":"2026-04-17","med":""},{"id":482,"cr":"2026-04-15","med":"Website"},{"id":473,"cr":"2026-04-13","med":""},{"id":472,"cr":"2026-04-13","med":""},{"id":471,"cr":"2026-04-11","med":"Website"},{"id":469,"cr":"2026-04-09","med":""},{"id":463,"cr":"2026-04-08","med":""},{"id":457,"cr":"2026-04-07","med":""},{"id":455,"cr":"2026-04-04","med":"Website"},{"id":454,"cr":"2026-04-04","med":""},{"id":449,"cr":"2026-03-31","med":""},{"id":447,"cr":"2026-03-31","med":"Website"},{"id":429,"cr":"2026-03-30","med":""},{"id":427,"cr":"2026-03-30","med":""},{"id":426,"cr":"2026-03-30","med":""},{"id":414,"cr":"2026-03-26","med":"Website"},{"id":412,"cr":"2026-03-26","med":"Website"},{"id":411,"cr":"2026-03-26","med":"Website"},{"id":408,"cr":"2026-03-25","med":"Website"},{"id":406,"cr":"2026-03-25","med":"Website"},{"id":401,"cr":"2026-03-25","med":"Website"},{"id":397,"cr":"2026-03-25","med":""},{"id":396,"cr":"2026-03-25","med":"Website"},{"id":392,"cr":"2026-03-24","med":""},{"id":391,"cr":"2026-03-24","med":"Website"},{"id":384,"cr":"2026-03-19","med":""},{"id":374,"cr":"2026-03-16","med":""},{"id":333,"cr":"2026-03-03","med":""},{"id":330,"cr":"2026-03-03","med":""},{"id":329,"cr":"2026-03-03","med":""},{"id":326,"cr":"2026-03-03","med":""},{"id":324,"cr":"2026-03-03","med":""},{"id":320,"cr":"2026-03-03","med":""},{"id":318,"cr":"2026-03-03","med":""},{"id":316,"cr":"2026-03-03","med":""},{"id":315,"cr":"2026-03-03","med":""},{"id":311,"cr":"2026-03-03","med":""},{"id":310,"cr":"2026-03-03","med":""},{"id":309,"cr":"2026-03-03","med":""},{"id":308,"cr":"2026-03-03","med":""},{"id":306,"cr":"2026-03-03","med":""},{"id":304,"cr":"2026-03-03","med":""},{"id":303,"cr":"2026-03-03","med":""},{"id":301,"cr":"2026-03-03","med":""},{"id":300,"cr":"2026-03-03","med":""},{"id":297,"cr":"2026-03-03","med":""},{"id":295,"cr":"2026-03-03","med":""},{"id":294,"cr":"2026-03-03","med":""},{"id":293,"cr":"2026-03-03","med":""},{"id":292,"cr":"2026-03-03","med":""},{"id":291,"cr":"2026-03-03","med":""},{"id":290,"cr":"2026-03-03","med":""},{"id":289,"cr":"2026-03-03","med":""},{"id":288,"cr":"2026-03-03","med":""},{"id":287,"cr":"2026-03-03","med":""},{"id":286,"cr":"2026-03-03","med":""},{"id":284,"cr":"2026-03-03","med":""},{"id":283,"cr":"2026-03-03","med":""},{"id":282,"cr":"2026-03-03","med":""},{"id":281,"cr":"2026-03-03","med":""},{"id":280,"cr":"2026-03-03","med":""},{"id":279,"cr":"2026-03-03","med":""},{"id":278,"cr":"2026-03-03","med":""},{"id":276,"cr":"2026-03-02","med":""},{"id":270,"cr":"2026-02-27","med":""},{"id":269,"cr":"2026-02-27","med":""},{"id":268,"cr":"2026-02-27","med":""},{"id":266,"cr":"2026-02-27","med":""},{"id":265,"cr":"2026-02-27","med":""},{"id":235,"cr":"2026-02-27","med":"Website"},{"id":234,"cr":"2026-02-27","med":"Website"},{"id":233,"cr":"2026-02-27","med":"Website"},{"id":231,"cr":"2026-02-27","med":"Website"},{"id":229,"cr":"2026-02-26","med":""},{"id":228,"cr":"2026-02-26","med":""},{"id":227,"cr":"2026-02-26","med":""},{"id":216,"cr":"2026-02-24","med":""},{"id":213,"cr":"2026-02-24","med":"Website"},{"id":210,"cr":"2026-02-24","med":""},{"id":209,"cr":"2026-02-24","med":""},{"id":189,"cr":"2026-02-20","med":""},{"id":185,"cr":"2026-02-20","med":""},{"id":181,"cr":"2026-02-19","med":""},{"id":156,"cr":"2026-02-17","med":""},{"id":139,"cr":"2026-02-17","med":""},{"id":124,"cr":"2026-02-16","med":""},{"id":122,"cr":"2026-02-16","med":""},{"id":119,"cr":"2026-02-16","med":""},{"id":117,"cr":"2026-02-16","med":""},{"id":109,"cr":"2026-02-16","med":""},{"id":88,"cr":"2026-02-16","med":""},{"id":86,"cr":"2026-02-16","med":""},{"id":67,"cr":"2026-02-13","med":""},{"id":44,"cr":"2026-02-06","med":""},{"id":43,"cr":"2026-02-06","med":""},{"id":42,"cr":"2026-02-06","med":""},{"id":36,"cr":"2026-02-06","med":""},{"id":34,"cr":"2026-02-04","med":""},{"id":27,"cr":"2026-02-03","med":""},{"id":26,"cr":"2026-02-03","med":""},{"id":24,"cr":"2026-02-02","med":""},{"id":22,"cr":"2026-02-02","med":""},{"id":21,"cr":"2026-02-02","med":""},{"id":16,"cr":"2026-02-02","med":""},{"id":12,"cr":"2026-02-02","med":""},{"id":8,"cr":"2026-02-02","med":""}];
+
+const LI = (function(){
+  // ── helpers ──────────────────────────────────────────────────────────────
+  const TODAY = '2026-06-08';
+  const metaMap = {};
+  LEAD_META.forEach(m => metaMap[m.id] = m);
+
+  // group a lead by Kundengruppe (reuse logic from existing dashboard)
+  function group(lead) {
+    const n = (lead.name||'').toLowerCase();
+    const p = (lead.partner||'').toLowerCase();
+    const c = n+' '+p;
+    if(/windpark|wind|onshore|offshore|turbine|enercon|vestas|nordex|siemens\s*gamesa/i.test(c)) return 'Wind';
+    if(/solar|pv |photovolt|solarpark|bifacial/i.test(c)) return 'Solar/PV';
+    if(/batterie|speicher|bess|storage|akku/i.test(c)) return 'Speicher';
+    if(/wasser|hydro|biogas|biomasse/i.test(c)) return 'Hydro/Bio';
+    if(/netz|grid|kabel|substation|trafo|umspann/i.test(c)) return 'Netz';
+    if(/industrie|industri|fabrik|werk|anlage|produktion/i.test(c)) return 'Industrie';
+    return 'Sonstige';
+  }
+
+  // classify inbound/outbound: if lead has ANY Ex-In activity → inbound
+  function direction(lid) {
+    const acts = ALL_ACTS2.filter(a => a.lid === lid);
+    if(!acts.length) return 'unknown';
+    if(acts.some(a => a.dir === 'Ex-In')) return 'inbound';
+    return 'outbound';
+  }
+
+  // days between two date strings
+  function daysDiff(a, b) {
+    return Math.round((new Date(b) - new Date(a)) / 86400000);
+  }
+
+  // time to first interaction in days
+  function ttfi(lid, crDate) {
+    const acts = ALL_ACTS2.filter(a => a.lid === lid && a.d >= crDate).sort((a,b)=>a.d.localeCompare(b.d));
+    if(!acts.length) return null;
+    return Math.max(0, daysDiff(crDate, acts[0].d));
+  }
+
+  // last activity date for a lead
+  function lastAct(lid) {
+    const acts = ALL_ACTS2.filter(a => a.lid === lid).sort((a,b)=>b.d.localeCompare(a.d));
+    return acts.length ? acts[0].d : null;
+  }
+
+  // cold = last activity > 30 days ago (or never)
+  function coldStatus(lid) {
+    const la = lastAct(lid);
+    if(!la) return 'never';
+    return daysDiff(la, TODAY) > 30 ? 'cold' : 'active';
+  }
+
+  // ── build enriched lead list (done once) ─────────────────────────────────
+  let _enriched = null;
+  function enriched() {
+    if(_enriched) return _enriched;
+    _enriched = ALL_LEADS.map(lead => {
+      const meta = metaMap[lead.id] || {};
+      const cr   = meta.cr || '';
+      const med  = meta.med || '';
+      const lid  = lead.id;
+      const acts = ALL_ACTS2.filter(a => a.lid === lid);
+      const la   = lastAct(lid);
+      const tf   = cr ? ttfi(lid, cr) : null;
+      const cold = coldStatus(lid);
+      const dir  = direction(lid);
+      const grp  = group(lead);
+      // first interaction direction
+      const firstAct = acts.filter(a=>a.d>=cr).sort((a,b)=>a.d.localeCompare(b.d))[0];
+      const firstDir = firstAct ? firstAct.dir : null;
+      return {
+        ...lead,
+        cr, med, grp, dir, la, tf, cold,
+        actCount: acts.length,
+        firstDir
+      };
+    });
+    return _enriched;
+  }
+
+  // ── chart instances (for destroy on re-init) ─────────────────────────────
+  const charts = {};
+  function mkChart(id, cfg) {
+    if(charts[id]) { try{charts[id].destroy()}catch(e){} }
+    const ctx = document.getElementById(id);
+    if(!ctx) return;
+    charts[id] = new Chart(ctx, cfg);
+  }
+
+  const COLORS = {
+    blue:'#3B82F6', green:'#10B981', amber:'#F59E0B', red:'#EF4444',
+    purple:'#8B5CF6', teal:'#14B8A6', orange:'#F97316', pink:'#EC4899',
+    gray:'#6B7280'
+  };
+  const GRP_COLORS = {
+    'Wind':COLORS.blue,'Solar/PV':COLORS.amber,'Speicher':COLORS.green,
+    'Hydro/Bio':COLORS.teal,'Netz':COLORS.purple,'Industrie':COLORS.orange,'Sonstige':COLORS.gray
+  };
+
+  // ── KPI cards ────────────────────────────────────────────────────────────
+  function renderKPIs() {
+    const leads = enriched();
+    const total = leads.length;
+    const inbound  = leads.filter(l=>l.dir==='inbound').length;
+    const outbound = leads.filter(l=>l.dir==='outbound').length;
+    const cold     = leads.filter(l=>l.cold==='cold').length;
+    const never    = leads.filter(l=>l.cold==='never').length;
+    const tts = leads.filter(l=>l.tf!==null).map(l=>l.tf);
+    const avgTTFI  = tts.length ? Math.round(tts.reduce((a,b)=>a+b,0)/tts.length) : 0;
+    const actLeads = leads.filter(l=>l.actCount>0).length;
+    const webLeads = leads.filter(l=>l.med==='Website').length;
+
+    const kpis = [
+      {label:'Leads gesamt',    value:total,                    color:'var(--accent)'},
+      {label:'Inbound',         value:inbound,                  color:COLORS.green},
+      {label:'Outbound',        value:outbound,                 color:COLORS.blue},
+      {label:'Via Website',     value:webLeads,                 color:COLORS.teal},
+      {label:'Ø TTFI (Tage)',   value:avgTTFI+'d',              color:COLORS.amber},
+      {label:'Mit Aktivität',   value:actLeads,                 color:COLORS.purple},
+      {label:'Kalt (>30 Tage)', value:cold,                     color:COLORS.red},
+      {label:'Nie kontaktiert', value:never,                    color:COLORS.orange},
+    ];
+    document.getElementById('li-kpis').innerHTML = kpis.map(k=>
+      `<div class="kpi"><span class="kpi-ey">${k.label}</span><span class="kpi-v" style="color:${k.color}">${k.value}</span></div>`
+    ).join('');
+  }
+
+  // ── action KPIs ──────────────────────────────────────────────────────────
+  function renderActionKPIs() {
+    const leads = enriched();
+    const sn3cold = leads.filter(l=>stageNum(l.stage)===3&&l.cold==='cold').length;
+    const sn4cold = leads.filter(l=>stageNum(l.stage)===4&&l.cold==='cold').length;
+    const highVal = leads.filter(l=>l.cold==='cold'&&l.revenue>50000).length;
+    const neverHigh= leads.filter(l=>l.cold==='never'&&l.revenue>0).length;
+    const items = [
+      {label:'Kalt – Angebote offen (S3)',      value:sn3cold, color:COLORS.amber, note:'Sofort nachfassen'},
+      {label:'Kalt – Commitment Phase (S4)',     value:sn4cold, color:COLORS.red,   note:'Hohe Priorität'},
+      {label:'Kalt mit Revenue >50k€',           value:highVal, color:COLORS.red,   note:'Fokus-Liste'},
+      {label:'Revenue-Leads nie kontaktiert',    value:neverHigh,color:COLORS.orange,note:'Aktivieren'},
+    ];
+    document.getElementById('li-action-kpis').innerHTML = items.map(k=>
+      `<div class="kpi"><span class="kpi-ey">${k.label}<br><span style="font-size:10px;color:var(--fg2)">${k.note}</span></span><span class="kpi-v" style="color:${k.color}">${k.value}</span></div>`
+    ).join('');
+  }
+
+  // ── populate group filter ─────────────────────────────────────────────────
+  function populateGroupFilter() {
+    const sel = document.getElementById('li-f-group');
+    if(!sel) return;
+    const grps = [...new Set(enriched().map(l=>l.grp))].sort();
+    sel.innerHTML = '<option value="">Alle Gruppen</option>' +
+      grps.map(g=>`<option value="${g}">${g}</option>`).join('');
+  }
+
+  // ── chart 1: Inbound vs Outbound (doughnut) ──────────────────────────────
+  function renderC1() {
+    const leads = enriched();
+    const inb = leads.filter(l=>l.dir==='inbound').length;
+    const out = leads.filter(l=>l.dir==='outbound').length;
+    const unk = leads.filter(l=>l.dir==='unknown').length;
+    mkChart('li-c1',{
+      type:'doughnut',
+      data:{labels:['Inbound','Outbound','Unbekannt'],
+            datasets:[{data:[inb,out,unk],backgroundColor:[COLORS.green,COLORS.blue,COLORS.gray],borderWidth:2}]},
+      options:{plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},cutout:'65%',
+        plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},
+                 tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw} (${Math.round(c.raw/leads.length*100)}%)`}}}}
+    });
+  }
+
+  // ── chart 2: Monatlicher Zufluss (bar) ────────────────────────────────────
+  function renderC2() {
+    const byMonth = {};
+    enriched().forEach(l=>{
+      const m = (l.cr||'').slice(0,7); if(!m) return;
+      byMonth[m] = (byMonth[m]||0)+1;
+    });
+    const months = Object.keys(byMonth).sort();
+    const labels = months.map(m=>{
+      const [y,mo]=m.split('-'); return `${['','Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'][+mo]} ${y.slice(2)}`;
+    });
+    mkChart('li-c2',{
+      type:'bar',
+      data:{labels,datasets:[{label:'Neue Leads',data:months.map(m=>byMonth[m]),backgroundColor:COLORS.blue+'cc',borderRadius:4}]},
+      options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.06)'}},x:{grid:{display:false}}},responsive:true,maintainAspectRatio:false}
+    });
+  }
+
+  // ── chart 3: Erstkanal / Medium (horizontal bar) ─────────────────────────
+  function renderC3() {
+    const cnt = {};
+    enriched().forEach(l=>{
+      const k = l.med||'Direkt/Unbekannt'; cnt[k]=(cnt[k]||0)+1;
+    });
+    const sorted = Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
+    mkChart('li-c3',{
+      type:'bar',
+      data:{labels:sorted.map(s=>s[0]),
+            datasets:[{data:sorted.map(s=>s[1]),backgroundColor:[COLORS.teal,COLORS.blue,COLORS.amber,COLORS.purple,COLORS.gray],borderRadius:4}]},
+      options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(0,0,0,.06)'}},y:{grid:{display:false}}},responsive:true,maintainAspectRatio:false}
+    });
+  }
+
+  // ── chart 4: Leads & Revenue je Gruppe (combo bar+line) ─────────────────
+  function renderC4() {
+    const grps = ['Wind','Solar/PV','Speicher','Hydro/Bio','Netz','Industrie','Sonstige'];
+    const leads = enriched();
+    const lCnt  = grps.map(g=>leads.filter(l=>l.grp===g).length);
+    const rev   = grps.map(g=>Math.round(leads.filter(l=>l.grp===g).reduce((s,l)=>s+(l.revenue||0),0)/1000));
+    mkChart('li-c4',{
+      type:'bar',
+      data:{labels:grps,datasets:[
+        {type:'bar', label:'Leads', data:lCnt, backgroundColor:grps.map(g=>GRP_COLORS[g]+'aa'), borderRadius:4, yAxisID:'y'},
+        {type:'line',label:'Revenue (k€)',data:rev,borderColor:COLORS.amber,backgroundColor:'transparent',pointRadius:4,borderWidth:2,yAxisID:'y2'}
+      ]},
+      options:{plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+               scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.06)'},title:{display:true,text:'Leads'}},
+                       y2:{position:'right',beginAtZero:true,grid:{display:false},title:{display:true,text:'Revenue k€'}}},
+               responsive:true,maintainAspectRatio:false}
+    });
+  }
+
+  // ── chart 5: Ø Interaktionen je Gruppe (horizontal bar) ─────────────────
+  function renderC5() {
+    const grps = ['Wind','Solar/PV','Speicher','Hydro/Bio','Netz','Industrie','Sonstige'];
+    const leads = enriched();
+    const avgActs = grps.map(g=>{
+      const gl = leads.filter(l=>l.grp===g);
+      return gl.length ? Math.round(gl.reduce((s,l)=>s+l.actCount,0)/gl.length*10)/10 : 0;
+    });
+    mkChart('li-c5',{
+      type:'bar',
+      data:{labels:grps,datasets:[{data:avgActs,backgroundColor:grps.map(g=>GRP_COLORS[g]+'cc'),borderRadius:4}]},
+      options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(0,0,0,.06)'}},y:{grid:{display:false}}},responsive:true,maintainAspectRatio:false}
+    });
+  }
+
+  // ── chart 6: Interaktionstiefe – Histogram ───────────────────────────────
+  function renderC6() {
+    const buckets = ['0','1','2','3-5','6-10','11-20','>20'];
+    const counts  = [0,0,0,0,0,0,0];
+    enriched().forEach(l=>{
+      const n = l.actCount;
+      if(n===0) counts[0]++;
+      else if(n===1) counts[1]++;
+      else if(n===2) counts[2]++;
+      else if(n<=5)  counts[3]++;
+      else if(n<=10) counts[4]++;
+      else if(n<=20) counts[5]++;
+      else           counts[6]++;
+    });
+    mkChart('li-c6',{
+      type:'bar',
+      data:{labels:buckets,datasets:[{label:'Leads',data:counts,backgroundColor:COLORS.purple+'cc',borderRadius:4}]},
+      options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.06)'}},x:{grid:{display:false}}},responsive:true,maintainAspectRatio:false}
+    });
+  }
+
+  // ── chart 7: Aktivitätstypen (doughnut) ──────────────────────────────────
+  function renderC7() {
+    const cnt = {};
+    ALL_ACTS2.forEach(a=>{
+      const t = a.ca||a.ty||'Sonstiges'; cnt[t]=(cnt[t]||0)+1;
+    });
+    const sorted = Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const palette = [COLORS.blue,COLORS.green,COLORS.amber,COLORS.purple,COLORS.teal,COLORS.gray];
+    mkChart('li-c7',{
+      type:'doughnut',
+      data:{labels:sorted.map(s=>s[0]),datasets:[{data:sorted.map(s=>s[1]),backgroundColor:palette,borderWidth:2}]},
+      options:{cutout:'60%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}},responsive:true,maintainAspectRatio:false}
+    });
+  }
+
+  // ── chart 8: TTFI Histogram ───────────────────────────────────────────────
+  function renderC8() {
+    const buckets = ['0 Tage','1 Tag','2-3 Tage','4-7 Tage','8-14 Tage','15-30 Tage','>30 Tage'];
+    const counts  = [0,0,0,0,0,0,0];
+    enriched().forEach(l=>{
+      if(l.tf===null) return;
+      if(l.tf===0)      counts[0]++;
+      else if(l.tf===1) counts[1]++;
+      else if(l.tf<=3)  counts[2]++;
+      else if(l.tf<=7)  counts[3]++;
+      else if(l.tf<=14) counts[4]++;
+      else if(l.tf<=30) counts[5]++;
+      else              counts[6]++;
+    });
+    const bgColors = counts.map((_,i)=> i<=1?COLORS.green+'cc': i<=3?COLORS.amber+'cc': COLORS.red+'cc');
+    mkChart('li-c8',{
+      type:'bar',
+      data:{labels:buckets,datasets:[{label:'Leads',data:counts,backgroundColor:bgColors,borderRadius:4}]},
+      options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,.06)'}},x:{grid:{display:false}}},responsive:true,maintainAspectRatio:false}
+    });
+  }
+
+  // ── table ─────────────────────────────────────────────────────────────────
+  function renderTable() {
+    const fGrp  = (document.getElementById('li-f-group')||{}).value||'';
+    const fDir  = (document.getElementById('li-f-dir')||{}).value||'';
+    const fCold = (document.getElementById('li-f-cold')||{}).value||'';
+    const fQ    = ((document.getElementById('li-f-q')||{}).value||'').toLowerCase();
+
+    let rows = enriched().filter(l=>{
+      if(fGrp  && l.grp!==fGrp)   return false;
+      if(fDir  && l.dir!==fDir)    return false;
+      if(fCold && l.cold!==fCold)  return false;
+      if(fQ    && !(l.name||'').toLowerCase().includes(fQ) && !(l.partner||'').toLowerCase().includes(fQ)) return false;
+      return true;
+    });
+    rows.sort((a,b)=>b.actCount-a.actCount);
+
+    const countEl = document.getElementById('li-table-count');
+    if(countEl) countEl.textContent = `(${rows.length} Leads)`;
+
+    const COLD_DOT = {'cold':'🔴','active':'🟢','never':'⚪'};
+    const DIR_BADGE = {
+      'inbound': '<span style="background:#10B98122;color:#10B981;padding:1px 6px;border-radius:8px;font-size:10px">↓ Inbound</span>',
+      'outbound':'<span style="background:#3B82F622;color:#3B82F6;padding:1px 6px;border-radius:8px;font-size:10px">↑ Outbound</span>',
+      'unknown': '<span style="background:#6B728022;color:#6B7280;padding:1px 6px;border-radius:8px;font-size:10px">? —</span>'
+    };
+
+    const tbody = document.getElementById('li-tbody');
+    if(!tbody) return;
+    tbody.innerHTML = rows.slice(0,200).map(l=>{
+      const stageLabel = l.stage ? l.stage.replace(/^STAGE\s*\d+\s*[–-]\s*/i,'') : '—';
+      const laFmt = l.la ? l.la.slice(5).replace('-','.') : '—';
+      const tfFmt = l.tf===null ? '—' : l.tf===0 ? 'gleich' : l.tf+'d';
+      const revFmt= l.revenue>0 ? (l.revenue/1000).toFixed(0)+'k€' : '—';
+      const coldDot = COLD_DOT[l.cold]||'';
+      return `<tr style="border-bottom:1px solid var(--bd1);cursor:pointer" onclick="openDrawerByLeadId(${l.id})">
+        <td style="padding:6px 12px">${coldDot} ${l.name||'—'}</td>
+        <td style="padding:6px 12px"><span style="background:${GRP_COLORS[l.grp]||'#888'}22;color:${GRP_COLORS[l.grp]||'#888'};padding:1px 6px;border-radius:8px;font-size:10px">${l.grp}</span></td>
+        <td style="padding:6px 12px;font-size:11px;color:var(--fg2)">${stageLabel}</td>
+        <td style="padding:6px 12px;font-size:11px">${(l.rep||'—').split(' ').pop()}</td>
+        <td style="padding:6px 12px;text-align:right">${l.actCount}</td>
+        <td style="padding:6px 12px">${DIR_BADGE[l.dir]||''}</td>
+        <td style="padding:6px 12px;font-size:11px;color:var(--fg2)">${laFmt}</td>
+        <td style="padding:6px 12px;text-align:right;font-size:11px">${tfFmt}</td>
+        <td style="padding:6px 12px;text-align:right;font-weight:600">${revFmt}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── init (called from nav button) ────────────────────────────────────────
+  function init() {
+    renderKPIs();
+    renderActionKPIs();
+    populateGroupFilter();
+    renderC1(); renderC2(); renderC3(); renderC4();
+    renderC5(); renderC6(); renderC7(); renderC8();
+    renderTable();
+  }
+
+  return { init, renderTable };
+})();
+
+// helper: open drawer by lead id
+function openDrawerByLeadId(id) {
+  const lead = ALL_LEADS.find(l=>l.id===id);
+  if(!lead) return;
+  openDrawerByStageKey(stageNum(lead.stage));
+}
 </script>
 
 <div class="odoo-modal-bg" id="odoo-modal-bg" onclick="if(event.target===this)closeOdooModal()">
