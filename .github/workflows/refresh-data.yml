@@ -1,0 +1,47 @@
+name: Refresh Odoo Data
+
+on:
+  schedule:
+    # Every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub Actions UI
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to push back to repo
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run Odoo data refresh
+        env:
+          ODOO_URL:  ${{ secrets.ODOO_URL }}
+          ODOO_DB:   ${{ secrets.ODOO_DB }}
+          ODOO_USER: ${{ secrets.ODOO_USER }}
+          ODOO_KEY:  ${{ secrets.ODOO_KEY }}
+          HTML_PATH: sales.html
+        run: python scripts/refresh_odoo_data.py
+
+      - name: Commit and push if data changed
+        run: |
+          git config user.name  "ELMI Data Bot"
+          git config user.email "bot@elmipower.de"
+          git add sales.html
+          # Only commit if there are actual changes
+          if git diff --cached --quiet; then
+            echo "No data changes — skipping commit."
+          else
+            git commit -m "Auto-refresh Odoo data [$(date -u '+%Y-%m-%d %H:%M UTC')]"
+            git push
+          fi
