@@ -543,10 +543,10 @@ canvas.clickable{cursor:pointer}
         <div class="card wide"><div class="card-t">Monatsumsatz 2026 + Forecast <span>* = gewichteter Forecast</span></div><div style="height:250px"><canvas id="c8"></canvas></div></div>
       </div>
       <div class="kpi-grid">
-        <div class="kpi"><span class="kpi-ey">M&#228;rz 2026</span><span class="kpi-v">1,2 K</span><div class="kpi-c">fakturiert</div></div>
-        <div class="kpi"><span class="kpi-ey">April 2026</span><span class="kpi-v">263 K</span><div class="kpi-c">fakturiert</div></div>
-        <div class="kpi strip"><span class="kpi-ey">Mai 2026</span><span class="kpi-v" style="color:var(--success)">303 K</span><div class="kpi-c"><i data-lucide="trending-up" size="11"></i> St&#228;rkstes Monat YTD</div></div>
-        <div class="kpi"><span class="kpi-ey">Forecast Q3 2026</span><span class="kpi-v" style="color:var(--elmi-tang)">~1,76 Mio.</span><div class="kpi-c">Stage-4-Pipeline gewichtet</div></div>
+        <div class="kpi" style="cursor:pointer" onclick="openInvoiceModal(0)"><span class="kpi-ey">M&#228;rz 2026</span><span class="kpi-v">1,2 K</span><div class="kpi-c"><i data-lucide="file-text" size="11"></i> Rechnungen &#8594;</div></div>
+        <div class="kpi" style="cursor:pointer" onclick="openInvoiceModal(1)"><span class="kpi-ey">April 2026</span><span class="kpi-v">263 K</span><div class="kpi-c"><i data-lucide="file-text" size="11"></i> Rechnungen &#8594;</div></div>
+        <div class="kpi strip" style="cursor:pointer" onclick="openInvoiceModal(2)"><span class="kpi-ey">Mai 2026</span><span class="kpi-v" style="color:var(--success)">303 K</span><div class="kpi-c"><i data-lucide="trending-up" size="11"></i> Rechnungen &#8594;</div></div>
+        <div class="kpi" style="cursor:pointer" onclick="openDrawerByStageKey(4)"><span class="kpi-ey">Forecast Q3 2026</span><span class="kpi-v" style="color:var(--elmi-tang)">~1,76 Mio.</span><div class="kpi-c"><i data-lucide="list" size="11"></i> Stage-4-Deals &#8594;</div></div>
       </div>
       <span class="eyebrow">Commitment Phase &mdash; klick f&#252;r Deal-Detail</span>
       <div class="card"><div class="card-t">Stage 4 &mdash; Revenue nach Wahrscheinlichkeit <span>gr&#252;n=&gt;70%, orange=&gt;40%</span></div><div style="height:200px"><canvas id="c9"></canvas></div></div>
@@ -1223,8 +1223,16 @@ new Chart(document.getElementById('c8'),{type:'bar',
       {label:'Fakturiert',data:[1190,262643,302623,null,null,null],backgroundColor:C.red,borderRadius:6,borderSkipped:false},
       {label:'Forecast (gew.)',data:[null,null,null,350000,700000,706000],backgroundColor:'rgba(227,32,40,.25)',borderRadius:6,borderSkipped:false,borderColor:C.red,borderWidth:1.5}
     ]},
-  options:{...BASE,scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v>=1000?Math.round(v/1000)+'K':v}}}}
+  options:{...BASE,
+    onClick(e,els){
+      if(!els.length) return;
+      const idx=els[0].index;
+      if(idx<3) openInvoiceModal(idx);
+      else openDrawerByStageKey(4);
+    },
+    scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v>=1000?Math.round(v/1000)+'K':v}}}}
 });
+document.getElementById('c8').style.cursor='pointer';
 // c9 — Commitment Phase deals, uses stageNum (encoding-safe)
 (function(){
   const s4=ALL_LEADS.filter(d=>stageNum(d.stage)===4&&d.revenue>0).sort((a,b)=>b.revenue-a.revenue).slice(0,9);
