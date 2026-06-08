@@ -964,7 +964,47 @@ function openDrawerByStageKey(key){
   });
   document.getElementById('c2').style.cursor='pointer';
 })();
-// c3 — monthly revenue, klickbar → öffnet Drawer mit allen Deals
+// c3 — monthly revenue, klickbar → öffnet Rechnungsdetail-Popup
+const MONTHLY_INVOICES = [[{"number":"RE/2026/00001","partner":"ATEM Networks Deutschland GmbH, Jessica Müller-Feist","net":1000.0,"total":1190.0,"date":"2026-03-11","id":1}],[{"number":"RE/2026/00002","partner":"EFG Cordes & Graefe Brand KG, Peter Dewender","net":134118.26,"total":159600.73,"date":"2026-04-20","id":3},{"number":"RE/2026/00004","partner":"EFG Cordes & Graefe Brand KG","net":86590.45,"total":103042.64,"date":"2026-04-22","id":6}],[{"number":"RE/2026/00005","partner":"HS - C. Hempelmann KG. Hannover","net":125824.5,"total":149731.16,"date":"2026-05-06","id":8},{"number":"RE/2026/00006","partner":"Jolt Energy GmbH","net":40000.0,"total":47600.0,"date":"2026-05-07","id":9},{"number":"RE/2026/00007","partner":"EFG Cordes & Graefe Brand KG, Peter Dewender","net":86590.45,"total":103042.63,"date":"2026-05-18","id":10},{"number":"RE/2026/00008","partner":"EFG Hessen KG, Christian Weißenstein","net":850.0,"total":1011.5,"date":"2026-05-27","id":43},{"number":"RE/2026/00009","partner":"EEFA GmbH, Jan Wojtun","net":1040.2,"total":1237.84,"date":"2026-05-27","id":44}]];
+const MONTH_LABELS = ['März 2026','April 2026','Mai 2026'];
+
+function openInvoiceModal(idx) {
+  const invs = MONTHLY_INVOICES[idx] || [];
+  const label = MONTH_LABELS[idx];
+  const totalNet   = invs.reduce((s,i)=>s+i.net,0);
+  const totalGross = invs.reduce((s,i)=>s+i.total,0);
+  document.getElementById('odoo-m-title').textContent = 'Fakturierter Umsatz — ' + label;
+  document.getElementById('odoo-m-sub').textContent = invs.length + ' Rechnung' + (invs.length!==1?'en':'') + ' · Brutto ' + fmtE(totalGross);
+  document.getElementById('odoo-m-stats').innerHTML =
+    `<div class="odoo-m-stat">Rechnungen: <strong>${invs.length}</strong></div>`+
+    `<div class="odoo-m-stat">Netto: <strong>${fmtE(totalNet)}</strong></div>`+
+    `<div class="odoo-m-stat">Brutto (inkl. MwSt.): <strong>${fmtE(totalGross)}</strong></div>`;
+  document.getElementById('odoo-m-body').innerHTML = invs.length
+    ? invs.map((inv,i)=>`
+      <div class="odoo-deal-row">
+        <div class="odoo-deal-num">${i+1}</div>
+        <div class="odoo-deal-info">
+          <div class="odoo-deal-name">${inv.partner}</div>
+          <div class="odoo-deal-meta">
+            <span style="font-family:var(--mono);font-weight:700;color:var(--elmi-red)">${inv.number}</span>
+            <span style="color:var(--fg3)">|</span>
+            <span>${inv.date}</span>
+            <span style="color:var(--fg3)">|</span>
+            <span style="color:var(--fg2)">Netto: ${fmtE(inv.net)}</span>
+          </div>
+        </div>
+        <div style="font-family:var(--mono);font-weight:700;font-size:14px;margin-left:auto;padding-right:20px;white-space:nowrap">
+          ${fmtE(inv.total)}
+          <a href="${ODOO_BASE}/odoo/accounting/customer-invoices/${inv.id}" target="_blank" style="margin-left:8px;color:var(--elmi-red);font-size:11px;font-weight:400">
+            <i data-lucide="external-link" size="10"></i>
+          </a>
+        </div>
+      </div>`).join('')
+    : '<div style="padding:24px;text-align:center;color:var(--fg3)">Keine Rechnungen für diesen Monat.</div>';
+  document.getElementById('odoo-modal-bg').classList.add('open');
+  lucide.createIcons();
+}
+
 (function(){
   const MONTHS=['Mär 26','Apr 26','Mai 26'];
   const VALS=[1190,262643,302623];
@@ -973,11 +1013,7 @@ function openDrawerByStageKey(key){
     options:{...BASE,plugins:{legend:{display:false}},
       onClick(e,els){
         if(!els.length) return;
-        const m=MONTHS[els[0].index];
-        // Open drawer with all deals (invoices not in CRM leads — show pipeline context)
-        openDrawer('all');
-        document.getElementById('drawerTitle').textContent='Kontext: '+m;
-        document.getElementById('drawerSub').textContent='Fakturiert '+['1,2 K','263 K','303 K'][els[0].index]+' EUR · Pipeline Deals';
+        openInvoiceModal(els[0].index);
       },
       scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v>=1000?Math.round(v/1000)+'K':v}}}}
   });
