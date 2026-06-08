@@ -626,23 +626,6 @@ canvas.clickable{cursor:pointer}
           <i data-lucide="rotate-ccw" size="11"></i> Reset
         </button>
       </div>
-
-      <!-- ── ODOO POPUP MODAL ───────────────────────── -->
-      <div class="odoo-modal-bg" id="odoo-modal-bg" onclick="if(event.target===this)closeOdooModal()">
-        <div class="odoo-modal">
-          <div class="odoo-m-head">
-            <div class="odoo-m-icon"><i data-lucide="external-link" size="16"></i></div>
-            <div>
-              <div class="odoo-m-title" id="odoo-m-title">Odoo Deals</div>
-              <div class="odoo-m-sub" id="odoo-m-sub"></div>
-            </div>
-            <button class="odoo-m-close" onclick="closeOdooModal()"><i data-lucide="x" size="14"></i></button>
-          </div>
-          <div class="odoo-m-stats" id="odoo-m-stats"></div>
-          <div class="odoo-m-body" id="odoo-m-body"></div>
-        </div>
-      </div>
-
       <!-- ══ ABSCHNITT 1: KEY KPIs ══════════════════ -->
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
         <span class="eyebrow" style="margin-bottom:0">Key KPIs</span>
@@ -1785,5 +1768,20 @@ function getWeekNum5(d){
 
 lucide.createIcons();
 </script>
+
+<div class="odoo-modal-bg" id="odoo-modal-bg" onclick="if(event.target===this)closeOdooModal()">
+  <div class="odoo-modal">
+    <div class="odoo-m-head">
+      <div class="odoo-m-icon"><i data-lucide="external-link" size="16"></i></div>
+      <div>
+        <div class="odoo-m-title" id="odoo-m-title">Odoo Deals</div>
+        <div class="odoo-m-sub" id="odoo-m-sub"></div>
+      </div>
+      <button class="odoo-m-close" onclick="closeOdooModal()"><i data-lucide="x" size="14"></i></button>
+    </div>
+    <div class="odoo-m-stats" id="odoo-m-stats"></div>
+    <div class="odoo-m-body" id="odoo-m-body"></div>
+  </div>
+</div>
 </body>
 </html>
