@@ -2006,9 +2006,10 @@ function openLIModal(title, leads, subtitle) {
     </tr>`;
   }).join('');
   const totalRev = leads.reduce((s,l)=>s+(l.revenue||0),0);
-  document.getElementById('odoo-modal-title').textContent = title;
-  document.getElementById('odoo-modal-sub').textContent = subtitle || `${leads.length} Leads · ${(totalRev/1000).toFixed(0)}k € Pipeline`;
-  document.getElementById('odoo-modal-body').innerHTML = `
+  document.getElementById('odoo-m-title').textContent = title;
+  document.getElementById('odoo-m-sub').textContent = subtitle || `${leads.length} Leads · ${(totalRev/1000).toFixed(0)}k € Pipeline`;
+  document.getElementById('odoo-m-stats').innerHTML = '';
+  document.getElementById('odoo-m-body').innerHTML = `
     <table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead><tr style="background:var(--bg2);border-bottom:2px solid var(--bd1)">
         <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--fg2)">Lead</th>
