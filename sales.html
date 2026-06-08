@@ -1216,63 +1216,120 @@ rebuildC5(null);
   });
   document.getElementById('c7').style.cursor='pointer';
 })();
-// c8
-new Chart(document.getElementById('c8'),{type:'bar',
-  data:{labels:['Mär 26','Apr 26','Mai 26','Jun 26*','Jul 26*','Aug 26*'],
-    datasets:[
-      {label:'Fakturiert',data:[1190,262643,302623,null,null,null],backgroundColor:C.red,borderRadius:6,borderSkipped:false},
-      {label:'Forecast (gew.)',data:[null,null,null,350000,700000,706000],backgroundColor:'rgba(227,32,40,.25)',borderRadius:6,borderSkipped:false,borderColor:C.red,borderWidth:1.5}
-    ]},
-  options:{...BASE,
-    onClick(e,els){
-      if(!els.length) return;
-      const idx=els[0].index;
-      if(idx<3){ openInvoiceModal(idx); return; }
-      // Forecast bars — show Stage-4 deals as pipeline basis
-      const FORECAST_LABELS=['Jun 2026','Jul 2026','Aug 2026'];
-      const FORECAST_VALS=[350000,700000,706000];
-      const label=FORECAST_LABELS[idx-3];
-      const val=FORECAST_VALS[idx-3];
-      const s4=ALL_LEADS.filter(d=>stageNum(d.stage)===4&&d.revenue>0)
-        .sort((a,b)=>{
-          const da=a.deadline||'9999', db=b.deadline||'9999';
-          if(da!==db) return da<db?-1:1;
-          return (b.revenue*b.prob/100)-(a.revenue*a.prob/100);
-        });
-      const totalW=s4.reduce((s,d)=>s+d.revenue*d.prob/100,0);
-      document.getElementById('odoo-m-title').textContent='Forecast '+label;
-      document.getElementById('odoo-m-sub').textContent='Stage-4 Pipeline · Schätzanteil '+fmtE(val)+' von '+fmtE(totalW)+' gesamt';
-      document.getElementById('odoo-m-stats').innerHTML=
-        `<div class="odoo-m-stat">Deals: <strong>${s4.length}</strong></div>`+
-        `<div class="odoo-m-stat">Brutto-Pipeline: <strong>${fmtE(s4.reduce((s,d)=>s+d.revenue,0))}</strong></div>`+
-        `<div class="odoo-m-stat">Gewichtet gesamt: <strong style="color:var(--success)">${fmtE(totalW)}</strong></div>`;
-      document.getElementById('odoo-m-body').innerHTML=s4.map((d,i)=>{
-        const w=Math.round(d.revenue*d.prob/100);
-        const pc=d.prob>=70?'var(--success)':d.prob>=40?'var(--elmi-tang)':'var(--fg3)';
-        return`<div class="odoo-deal-row">
-          <div class="odoo-deal-num">${i+1}</div>
-          <div class="odoo-deal-info">
-            <div class="odoo-deal-name">${d.name}</div>
-            <div class="odoo-deal-meta">
-              <span>${d.partner||'—'}</span>
-              <span style="color:var(--fg3)">|</span>
-              <span style="color:${pc};font-weight:700">${d.prob}%</span>
-              <span style="color:var(--fg3)">|</span>
-              <span style="color:var(--fg2)">Deadline: ${d.deadline||'—'}</span>
-            </div>
+// c8 — dynamisch aus ALL_LEADS Stage-4-Deadlines aufgebaut
+(function(){
+  const TODAY_MONTH = '2026-06';
+  const s4 = ALL_LEADS.filter(d=>stageNum(d.stage)===4&&d.revenue>0);
+
+  // Gruppe nach Deadline
+  const overdue=[], noDeadline=[];
+  const byMonth={};
+  s4.forEach(d=>{
+    const dl=d.deadline||'';
+    if(!dl){ noDeadline.push(d); return; }
+    if(dl<TODAY_MONTH+'-01'){ overdue.push(d); return; }
+    const mo=dl.slice(0,7);
+    (byMonth[mo]=byMonth[mo]||[]).push(d);
+  });
+  const futureMonths=Object.keys(byMonth).sort();
+
+  // Chart-Daten aufbauen
+  const fakturiert=[1190,262643,302623];
+  const fakLabels=['Mär 26','Apr 26','Mai 26'];
+  const fcastLabels=[];
+  const fcastVals=[];
+  const fcastColors=[];
+  const fcastGroups=[];  // für onClick
+
+  // Überfällig-Säule
+  if(overdue.length){
+    fcastLabels.push('⚠ Überfällig');
+    fcastVals.push(Math.round(overdue.reduce((s,d)=>s+d.revenue*d.prob/100,0)));
+    fcastColors.push(C.warn);
+    fcastGroups.push({label:'Überfällig (Erwartung überschritten)',deals:overdue});
+  }
+  // Zukünftige Monate nach Deadline
+  futureMonths.forEach(mo=>{
+    const deals=byMonth[mo];
+    const w=Math.round(deals.reduce((s,d)=>s+d.revenue*d.prob/100,0));
+    const [y,m]=mo.split('-');
+    const moLabel=new Date(+y,+m-1,1).toLocaleString('de-DE',{month:'short'})+' '+y.slice(2);
+    fcastLabels.push(moLabel);
+    fcastVals.push(w);
+    fcastColors.push('rgba(227,32,40,.35)');
+    fcastGroups.push({label:'Forecast '+moLabel,deals});
+  });
+  // Kein Termin
+  if(noDeadline.length){
+    fcastLabels.push('Kein Termin');
+    fcastVals.push(Math.round(noDeadline.reduce((s,d)=>s+d.revenue*d.prob/100,0)));
+    fcastColors.push(C.muted);
+    fcastGroups.push({label:'Kein Abschlussdatum gesetzt',deals:noDeadline});
+  }
+
+  const allLabels=[...fakLabels,...fcastLabels];
+  const n=fakLabels.length;
+
+  function openForecastGroupModal(grp){
+    const deals=grp.deals.sort((a,b)=>{
+      const da=a.deadline||'9999',db=b.deadline||'9999';
+      return da!==db?(da<db?-1:1):(b.revenue*b.prob/100)-(a.revenue*a.prob/100);
+    });
+    const totalW=deals.reduce((s,d)=>s+d.revenue*d.prob/100,0);
+    const totalRev=deals.reduce((s,d)=>s+d.revenue,0);
+    document.getElementById('odoo-m-title').textContent=grp.label;
+    document.getElementById('odoo-m-sub').textContent=deals.length+' Deal'+(deals.length!==1?'s':'')+' · Gewichtet '+fmtE(totalW);
+    document.getElementById('odoo-m-stats').innerHTML=
+      `<div class="odoo-m-stat">Deals: <strong>${deals.length}</strong></div>`+
+      `<div class="odoo-m-stat">Brutto: <strong>${fmtE(totalRev)}</strong></div>`+
+      `<div class="odoo-m-stat">Gewichtet: <strong style="color:var(--success)">${fmtE(totalW)}</strong></div>`;
+    document.getElementById('odoo-m-body').innerHTML=deals.map((d,i)=>{
+      const w=Math.round(d.revenue*d.prob/100);
+      const pc=d.prob>=70?'var(--success)':d.prob>=40?'var(--elmi-tang)':'var(--fg3)';
+      return`<div class="odoo-deal-row">
+        <div class="odoo-deal-num">${i+1}</div>
+        <div class="odoo-deal-info">
+          <div class="odoo-deal-name">${d.name}</div>
+          <div class="odoo-deal-meta">
+            <span>${d.partner||'—'}</span>
+            <span style="color:var(--fg3)">|</span>
+            <span style="color:${pc};font-weight:700">${d.prob}%</span>
+            <span style="color:var(--fg3)">|</span>
+            <span style="color:var(--fg2)">Abschluss: ${d.deadline||'—'}</span>
           </div>
-          <div style="text-align:right;margin-left:auto;padding-right:20px;white-space:nowrap">
-            <div style="font-family:var(--mono);font-weight:700;font-size:13px">${fmtE(d.revenue)}</div>
-            <div style="font-family:var(--mono);font-size:11px;color:${pc}">gew. ${fmtE(w)}</div>
-          </div>
-        </div>`;
-      }).join('');
-      document.getElementById('odoo-modal-bg').classList.add('open');
-      lucide.createIcons();
-    },
-    scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v>=1000?Math.round(v/1000)+'K':v}}}}
-});
-document.getElementById('c8').style.cursor='pointer';
+        </div>
+        <div style="text-align:right;margin-left:auto;padding-right:20px;white-space:nowrap">
+          <div style="font-family:var(--mono);font-weight:700;font-size:13px">${fmtE(d.revenue)}</div>
+          <div style="font-family:var(--mono);font-size:11px;color:${pc}">gew. ${fmtE(w)}</div>
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('odoo-modal-bg').classList.add('open');
+    lucide.createIcons();
+  }
+
+  new Chart(document.getElementById('c8'),{type:'bar',
+    data:{labels:allLabels,
+      datasets:[
+        {label:'Fakturiert',
+          data:[...fakturiert,...Array(fcastLabels.length).fill(null)],
+          backgroundColor:C.red,borderRadius:6,borderSkipped:false},
+        {label:'Stage-4 Forecast (gewichtet)',
+          data:[...Array(n).fill(null),...fcastVals],
+          backgroundColor:[...fcastColors],borderRadius:6,borderSkipped:false,
+          borderColor:[...fcastColors.map(c=>c)],borderWidth:1.5}
+      ]},
+    options:{...BASE,
+      onClick(e,els){
+        if(!els.length) return;
+        const idx=els[0].index;
+        if(idx<n){ openInvoiceModal(idx); return; }
+        openForecastGroupModal(fcastGroups[idx-n]);
+      },
+      scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v>=1000?Math.round(v/1000)+'K':v}}}}
+  });
+  document.getElementById('c8').style.cursor='pointer';
+})();
 // c9 — Commitment Phase deals, uses stageNum (encoding-safe)
 (function(){
   const s4=ALL_LEADS.filter(d=>stageNum(d.stage)===4&&d.revenue>0).sort((a,b)=>b.revenue-a.revenue).slice(0,9);
