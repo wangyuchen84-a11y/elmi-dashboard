@@ -1227,8 +1227,48 @@ new Chart(document.getElementById('c8'),{type:'bar',
     onClick(e,els){
       if(!els.length) return;
       const idx=els[0].index;
-      if(idx<3) openInvoiceModal(idx);
-      else openDrawerByStageKey(4);
+      if(idx<3){ openInvoiceModal(idx); return; }
+      // Forecast bars — show Stage-4 deals as pipeline basis
+      const FORECAST_LABELS=['Jun 2026','Jul 2026','Aug 2026'];
+      const FORECAST_VALS=[350000,700000,706000];
+      const label=FORECAST_LABELS[idx-3];
+      const val=FORECAST_VALS[idx-3];
+      const s4=ALL_LEADS.filter(d=>stageNum(d.stage)===4&&d.revenue>0)
+        .sort((a,b)=>{
+          const da=a.deadline||'9999', db=b.deadline||'9999';
+          if(da!==db) return da<db?-1:1;
+          return (b.revenue*b.prob/100)-(a.revenue*a.prob/100);
+        });
+      const totalW=s4.reduce((s,d)=>s+d.revenue*d.prob/100,0);
+      document.getElementById('odoo-m-title').textContent='Forecast '+label;
+      document.getElementById('odoo-m-sub').textContent='Stage-4 Pipeline · Schätzanteil '+fmtE(val)+' von '+fmtE(totalW)+' gesamt';
+      document.getElementById('odoo-m-stats').innerHTML=
+        `<div class="odoo-m-stat">Deals: <strong>${s4.length}</strong></div>`+
+        `<div class="odoo-m-stat">Brutto-Pipeline: <strong>${fmtE(s4.reduce((s,d)=>s+d.revenue,0))}</strong></div>`+
+        `<div class="odoo-m-stat">Gewichtet gesamt: <strong style="color:var(--success)">${fmtE(totalW)}</strong></div>`;
+      document.getElementById('odoo-m-body').innerHTML=s4.map((d,i)=>{
+        const w=Math.round(d.revenue*d.prob/100);
+        const pc=d.prob>=70?'var(--success)':d.prob>=40?'var(--elmi-tang)':'var(--fg3)';
+        return`<div class="odoo-deal-row">
+          <div class="odoo-deal-num">${i+1}</div>
+          <div class="odoo-deal-info">
+            <div class="odoo-deal-name">${d.name}</div>
+            <div class="odoo-deal-meta">
+              <span>${d.partner||'—'}</span>
+              <span style="color:var(--fg3)">|</span>
+              <span style="color:${pc};font-weight:700">${d.prob}%</span>
+              <span style="color:var(--fg3)">|</span>
+              <span style="color:var(--fg2)">Deadline: ${d.deadline||'—'}</span>
+            </div>
+          </div>
+          <div style="text-align:right;margin-left:auto;padding-right:20px;white-space:nowrap">
+            <div style="font-family:var(--mono);font-weight:700;font-size:13px">${fmtE(d.revenue)}</div>
+            <div style="font-family:var(--mono);font-size:11px;color:${pc}">gew. ${fmtE(w)}</div>
+          </div>
+        </div>`;
+      }).join('');
+      document.getElementById('odoo-modal-bg').classList.add('open');
+      lucide.createIcons();
     },
     scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v>=1000?Math.round(v/1000)+'K':v}}}}
 });
