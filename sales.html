@@ -2924,13 +2924,27 @@ const PEvo=(function(){
     return new Map(msgs.map(m=>[m.id,m]));
   }
 
-  // ── Main sync: Odoo → IndexedDB ───────────────────────────────────────────
+  // ── Main sync: Odoo → IndexedDB (inkrementell) ───────────────────────────
+  // Erster Sync: holt alles der letzten 3 Jahre (full history).
+  // Jeder weitere Sync: holt nur Events seit dem letzten Sync-Zeitpunkt.
+  // Historische Events in der DB werden NIEMALS gelöscht — nur neue werden hinzugefügt (upsert by id).
   async function doSync(){
     const btn=document.getElementById('evo-btn-sync');
     const origHtml=btn?btn.innerHTML:'';
     if(btn){btn.disabled=true;btn.innerHTML='<div class="evo-spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:-3px;margin-right:6px"></div>Lädt…';}
     try{
-      const cutoff=new Date(); cutoff.setMonth(cutoff.getMonth()-18);
+      // Cutoff: last_sync wenn vorhanden, sonst 3 Jahre zurück (erster Sync = volle Historie)
+      const lastSync=await dbGet('meta','last_sync');
+      let cutoff;
+      if(lastSync){
+        cutoff=new Date(lastSync);
+        // 1 Stunde Puffer rückwärts um Lücken durch Zeitzone/Rounding zu vermeiden
+        cutoff.setHours(cutoff.getHours()-1);
+        setStatus(`Inkrementeller Sync ab ${cutoff.toLocaleString('de-DE')}…`);
+      } else {
+        cutoff=new Date(); cutoff.setFullYear(cutoff.getFullYear()-3);
+        setStatus('Erster Sync — lade vollständige Historie (bis 3 Jahre zurück)…');
+      }
       const cutoffStr=cutoff.toISOString().slice(0,10);
 
       let rawTV=null,msgMap=null;
@@ -2943,15 +2957,15 @@ const PEvo=(function(){
       }
       if(!msgMap) msgMap=await enrichDates(rawTV);
 
-      setStatus('Verarbeite Daten…');
-      const events=[];
+      setStatus('Verarbeite neue Daten…');
+      const newEvents=[];
       for(const tv of rawTV){
         const mid=Array.isArray(tv.mail_message_id)?tv.mail_message_id[0]:tv.mail_message_id;
         const msg=msgMap.get(mid);
         if(!msg) continue;
         const sk=getDealStageKey({stage:tv.new_value_char});
         if(!sk) continue;
-        events.push({
+        newEvents.push({
           id:`${msg.res_id}_${mid}`,
           dealId:msg.res_id,
           date:new Date(msg.date.replace(' ','T')),
@@ -2960,19 +2974,26 @@ const PEvo=(function(){
           stageKey:sk
         });
       }
-      setStatus(`${events.length} Stage-Ereignisse verarbeitet…`);
+      setStatus(`${newEvents.length} neue Stage-Ereignisse — schreibe in lokale DB…`);
 
+      // Upsert (put) — keine clear(), historische Daten bleiben erhalten
       const db=await openDB();
       const tx=db.transaction(['stage_events','meta'],'readwrite');
-      tx.objectStore('stage_events').clear();
-      for(const ev of events) tx.objectStore('stage_events').put(ev);
+      const store=tx.objectStore('stage_events');
+      for(const ev of newEvents) store.put(ev);
       const now=new Date().toISOString();
       tx.objectStore('meta').put({key:'last_sync',value:now});
-      tx.objectStore('meta').put({key:'total_events',value:events.length});
       await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
 
-      if(!events.length){
-        setStatus('⚠ 0 Stage-Ereignisse gefunden. Möglicherweise ist stage_id-Tracking in Odoo nicht aktiviert.',false);
+      // Gesamtanzahl NACH dem Merge zählen
+      const total=await countAllEvents();
+      const metaDb=await openDB();
+      const mtx=metaDb.transaction('meta','readwrite');
+      mtx.objectStore('meta').put({key:'total_events',value:total});
+      await new Promise((res,rej)=>{mtx.oncomplete=res;mtx.onerror=rej;});
+
+      if(newEvents.length===0){
+        setStatus(`Keine neuen Ereignisse seit letztem Sync. Gesamt in DB: ${total} Stage-Ereignisse.`);
       } else {
         await refreshStatusLine();
       }
@@ -2982,7 +3003,6 @@ const PEvo=(function(){
         ||e.message.includes('NetworkError')||e.message.includes('Load failed')
         ||e.message.includes('CORS')||e.message.includes('network');
       if(isCors){
-        // CORS/network block → show static fallback with explanation
         showStaticFallback();
       } else {
         setStatus('⚠ Synchronisierung fehlgeschlagen: '+e.message);
@@ -3215,9 +3235,12 @@ const PEvo=(function(){
     init,
     applyFilter,
     refreshCharts,
-    syncFromOdoo:()=>{
-      if(confirm('Alle Stage-Ereignisse werden neu aus Odoo geladen und die lokale Datenbank überschrieben.\nDieser Vorgang dauert ca. 10–30 Sekunden. Fortfahren?'))
-        doSync();
+    syncFromOdoo:async()=>{
+      const lastSync=await dbGet('meta','last_sync').catch(()=>null);
+      const msg=lastSync
+        ?`Inkrementeller Sync: Es werden nur neue Stage-Ereignisse seit ${new Date(lastSync).toLocaleString('de-DE')} geladen.\nHistorische Daten in der lokalen DB bleiben erhalten.\n\nFortfahren?`
+        :'Erster Sync: Es wird die vollständige Stage-Historie der letzten 3 Jahre aus Odoo geladen.\nDieser Vorgang dauert ca. 15–60 Sekunden.\n\nFortfahren?';
+      if(confirm(msg)) doSync();
     }
   };
 })();
