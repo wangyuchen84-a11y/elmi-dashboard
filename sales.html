@@ -860,7 +860,7 @@ canvas.clickable{cursor:pointer}
               <thead><tr>
                 <th>Stage</th>
                 <th class="r">Deals</th>
-                <th class="r">Ø Prob. (Odoo)</th>
+                <th class="r">Ø Wahrsch.</th>
                 <th class="r">Median Prob.</th>
                 <th class="r">Ø Ist-Dauer</th>
                 <th class="r">Median Dauer</th>
@@ -1068,12 +1068,12 @@ function openDrawer(stageFilter,sortBy,repFilter){
   document.getElementById('drawerSub').textContent=d.length+' Deals · '+fmtE(d.reduce((s,x)=>s+x.revenue,0))+' Brutto';
   const tot=d.reduce((s,x)=>s+x.revenue,0);
   const wgt=d.reduce((s,x)=>s+x.revenue*getConfiguredProb(x),0);
-  const avg=d.length?d.reduce((s,x)=>s+x.prob,0)/d.length:0;
+  const avg=d.length?d.reduce((s,x)=>s+getConfiguredProb(x)*100,0)/d.length:0;
   document.getElementById('drawerStats').innerHTML=
     `<div class="dstat"><div class="dstat-v">${d.length}</div><div class="dstat-l">Deals</div></div>`+
     `<div class="dstat"><div class="dstat-v">${fmt(tot)}</div><div class="dstat-l">Brutto EUR</div></div>`+
     `<div class="dstat"><div class="dstat-v" style="color:var(--elmi-red)">${fmt(wgt)}</div><div class="dstat-l">Gewichtet</div></div>`+
-    `<div class="dstat"><div class="dstat-v">${avg.toFixed(1)}%</div><div class="dstat-l">Ø Prob. (Odoo)</div></div>`;
+    `<div class="dstat"><div class="dstat-v">${avg.toFixed(1)}%</div><div class="dstat-l">Ø Wahrsch.</div></div>`;
   sortAndRender();
   showDrawerList();
   document.getElementById('dOverlay').classList.add('open');
@@ -1100,16 +1100,17 @@ function sortAndRender(){
   let list=[..._deals];
   if(_query)list=list.filter(d=>d.name.toLowerCase().includes(_query)||d.partner.toLowerCase().includes(_query));
   if(_sort==='revenue')list.sort((a,b)=>b.revenue-a.revenue);
-  else if(_sort==='prob')list.sort((a,b)=>b.prob-a.prob);
+  else if(_sort==='prob')list.sort((a,b)=>getConfiguredProb(b)-getConfiguredProb(a));
   else list.sort((a,b)=>a.name.localeCompare(b.name));
   const cont=document.getElementById('drawerItems');
   if(!list.length){cont.innerHTML='<div class="d-empty">Keine Deals gefunden.</div>';return;}
   cont.innerHTML=list.map(d=>{
-    const pc=d.prob>=70?C.success:d.prob>=30?C.tang:C.muted;
-    const pb=d.prob>=70?'rgba(31,157,85,.1)':d.prob>=30?'rgba(236,106,42,.1)':'rgba(155,155,165,.1)';
+    const cp=Math.round(getConfiguredProb(d)*100);
+    const pc=cp>=70?C.success:cp>=30?C.tang:C.muted;
+    const pb=cp>=70?'rgba(31,157,85,.1)':cp>=30?'rgba(236,106,42,.1)':'rgba(155,155,165,.1)';
     const dl=d.deadline?`<span class="chip neutral">${d.deadline}</span>`:'';
     return `<div class="deal-row" onclick="openDealDetail(${d.id})">
-      <div class="deal-prob" style="background:${pb};color:${pc}">${d.prob}%</div>
+      <div class="deal-prob" style="background:${pb};color:${pc}">${cp}%</div>
       <div class="deal-info">
         <div class="deal-name">${d.name}</div>
         <div class="deal-partner">${d.partner}</div>
@@ -1129,13 +1130,14 @@ function openDealDetail(id){
   const d=ALL_LEADS.find(l=>l.id===id);
   if(!d)return;
   document.getElementById('detailBreadcrumb').textContent=d.stage;
-  const pc=d.prob>=70?C.success:d.prob>=30?C.tang:C.muted;
+  const cp=Math.round(getConfiguredProb(d)*100);
+  const pc=cp>=70?C.success:cp>=30?C.tang:C.muted;
   document.getElementById('detailBody').innerHTML=
     `<div class="det-name">${d.name}</div>`+
     `<div class="det-partner">${d.partner}</div>`+
     `<div class="det-kpis">`+
       `<div class="dk"><span class="dk-v" style="color:var(--elmi-red)">${d.revenue>0?fmtE(d.revenue):'—'}</span><span class="dk-l">Revenue</span></div>`+
-      `<div class="dk"><span class="dk-v" style="color:${pc}">${d.prob}%</span><span class="dk-l">Wahrsch.</span></div>`+
+      `<div class="dk"><span class="dk-v" style="color:${pc}">${cp}%</span><span class="dk-l">Wahrsch.</span></div>`+
       `<div class="dk"><span class="dk-v">${d.revenue>0?fmtE(Math.round(d.revenue*getConfiguredProb(d))):'—'}</span><span class="dk-l">Gewichtet</span></div>`+
     `</div>`+
     `<div class="det-row"><span class="det-lbl">Stage</span><span class="det-val"><span class="chip ${sch(d.stage)}">${d.stage}</span></span></div>`+
@@ -1206,12 +1208,12 @@ function openDrawerByStageKey(key){
   document.getElementById('drawerSub').textContent=d.length+' Deals · '+fmtE(d.reduce((s,x)=>s+x.revenue,0))+' Brutto';
   const tot=d.reduce((s,x)=>s+x.revenue,0);
   const wgt=d.reduce((s,x)=>s+x.revenue*getConfiguredProb(x),0);
-  const avg=d.length?d.reduce((s,x)=>s+x.prob,0)/d.length:0;
+  const avg=d.length?d.reduce((s,x)=>s+getConfiguredProb(x)*100,0)/d.length:0;
   document.getElementById('drawerStats').innerHTML=
     `<div class="dstat"><div class="dstat-v">${d.length}</div><div class="dstat-l">Deals</div></div>`+
     `<div class="dstat"><div class="dstat-v">${fmt(tot)}</div><div class="dstat-l">Brutto EUR</div></div>`+
     `<div class="dstat"><div class="dstat-v" style="color:var(--elmi-red)">${fmt(wgt)}</div><div class="dstat-l">Gewichtet</div></div>`+
-    `<div class="dstat"><div class="dstat-v">${avg.toFixed(1)}%</div><div class="dstat-l">Ø Prob. (Odoo)</div></div>`;
+    `<div class="dstat"><div class="dstat-v">${avg.toFixed(1)}%</div><div class="dstat-l">Ø Wahrsch.</div></div>`;
   _sort='revenue';_query='';document.getElementById('drawerSearch').value='';
   sortAndRender();showDrawerList();
   document.getElementById('dOverlay').classList.add('open');
@@ -1349,7 +1351,7 @@ function renderTopDealsTable(stageKey) {
       <td><div style="font-weight:600">${d.name}</div></td>
       <td style="color:var(--fg2);font-size:12px">${d.partner}</td>
       <td><span class="chip ${sch(d.stage)}">${ss(d.stage)}</span></td>
-      <td class="r" style="color:var(--fg3)" title="Odoo (original)">${d.prob}%</td>
+      <td class="r">${Math.round(getConfiguredProb(d)*100)}%</td>
       <td class="r" style="font-weight:700">${fmtE(d.revenue)}</td>
       <td class="r" style="color:var(--elmi-red)">${fmtE(Math.round(d.revenue*getConfiguredProb(d)))}</td>`;
     tb.appendChild(tr);
@@ -1397,12 +1399,12 @@ function openDrawerStageRep(stageKey, rep) {
   document.getElementById('drawerSub').textContent = d.length+' Deals';
   const tot=d.reduce((s,x)=>s+x.revenue,0);
   const wgt=d.reduce((s,x)=>s+x.revenue*getConfiguredProb(x),0);
-  const avg=d.length?d.reduce((s,x)=>s+x.prob,0)/d.length:0;
+  const avg=d.length?d.reduce((s,x)=>s+getConfiguredProb(x)*100,0)/d.length:0;
   document.getElementById('drawerStats').innerHTML=
     `<div class="dstat"><div class="dstat-v">${d.length}</div><div class="dstat-l">Deals</div></div>`+
     `<div class="dstat"><div class="dstat-v">${fmt(tot)}</div><div class="dstat-l">Brutto EUR</div></div>`+
     `<div class="dstat"><div class="dstat-v" style="color:var(--elmi-red)">${fmt(wgt)}</div><div class="dstat-l">Gewichtet</div></div>`+
-    `<div class="dstat"><div class="dstat-v">${avg.toFixed(1)}%</div><div class="dstat-l">Ø Prob. (Odoo)</div></div>`;
+    `<div class="dstat"><div class="dstat-v">${avg.toFixed(1)}%</div><div class="dstat-l">Ø Wahrsch.</div></div>`;
   _sort='revenue'; _query='';
   document.getElementById('drawerSearch').value='';
   sortAndRender(); showDrawerList();
@@ -1554,7 +1556,6 @@ rebuildC5(null);
             <span>${d.partner||'—'}</span>
             <span style="color:var(--fg3)">|</span>
             <span style="color:${pc};font-weight:700">${cfgPct}%</span>
-            <span style="color:var(--fg3);font-size:10px">(Odoo: ${d.prob}%)</span>
             <span style="color:var(--fg3)">|</span>
             <span style="color:var(--fg2)">Odoo-Abschluss: ${d.deadline||'—'}</span>
           </div>
@@ -1598,7 +1599,7 @@ rebuildC5(null);
   new Chart(document.getElementById('c9'),{type:'bar',
     data:{labels:s4.map(d=>d.name.length>18?d.name.slice(0,17)+'…':d.name),
       datasets:[{label:'Revenue EUR',data:s4.map(d=>d.revenue),
-        backgroundColor:s4.map(d=>d.prob>=70?C.success:d.prob>=40?C.tang:C.muted),
+        backgroundColor:s4.map(d=>{const cp=getConfiguredProb(d)*100;return cp>=70?C.success:cp>=40?C.tang:C.muted;}),
         borderRadius:6,borderSkipped:false}]},
     options:{...BASE,plugins:{legend:{display:false}},
       onClick(e,els){if(els.length){openDrawer('all');setTimeout(()=>openDealDetail(s4[els[0].index].id),60);}},
