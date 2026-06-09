@@ -3310,7 +3310,10 @@ const PEvo=(function(){
         for(const ev of evList){
           if(new Date(ev.date)<=mp.snapshotDate) sk=ev.stageKey; else break;
         }
-        if(!sk) sk=getDealStageKey(deal); // fallback: current stage
+        // Deal hat Events, aber keines vor dem Snapshot → existierte damals noch nicht
+        if(!sk && evList.length>0) continue;
+        // Deal ohne jegliche Events → Fallback auf aktuellen Stand (nur für deals ohne Historie)
+        if(!sk) sk=getDealStageKey(deal);
         if(sk&&snap[sk]!==undefined){
           snap[sk]++; snapV[sk]+=deal.revenue||0;
         }
