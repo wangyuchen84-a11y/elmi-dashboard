@@ -442,6 +442,11 @@ canvas.clickable{cursor:pointer}
           <span class="kpi-v" id="kpi-stage3">—</span>
           <div class="kpi-c" id="kpi-stage3-c"><i data-lucide="file-search" size="11"></i> Stage 3 &#8594;</div>
         </div>
+        <div class="kpi" style="cursor:pointer;border-left:2px solid var(--elmi-red)" onclick="openLostModal()">
+          <span class="kpi-ey" style="color:var(--elmi-red)">Closed Lost</span>
+          <span class="kpi-v" style="color:var(--fg2)" id="kpi-lost">—</span>
+          <div class="kpi-c" id="kpi-lost-c"><i data-lucide="x-circle" size="11"></i> Stage X &#8594;</div>
+        </div>
       </div>
       <span class="eyebrow">Pipeline-Analyse &mdash; Balken anklickbar</span>
       <div class="cgrid">
@@ -2268,6 +2273,31 @@ function openYTDModal() {
   lucide.createIcons();
 }
 
+function openLostModal() {
+  const deals = ALL_LEADS.filter(d=>/stage\s*x|closed.?lost/i.test(d.stage||'')).sort((a,b)=>b.revenue-a.revenue);
+  const total = deals.reduce((s,d)=>s+(d.revenue||0),0);
+  document.getElementById('odoo-m-title').textContent = 'Closed Lost';
+  document.getElementById('odoo-m-sub').textContent = 'Stage X — verlorene Deals';
+  document.getElementById('odoo-m-stats').innerHTML =
+    `<div class="odoo-m-stat">Deals: <strong>${deals.length}</strong></div>`+
+    (total>0?`<div class="odoo-m-stat">Volumen: <strong>${fmt(total)} EUR</strong></div>`:'');
+  document.getElementById('odoo-m-list').innerHTML = deals.length
+    ? deals.map(d=>`<div class="odoo-deal-row">
+        <div class="odoo-deal-info">
+          <div class="odoo-deal-name">${d.name||'—'}</div>
+          <div class="odoo-deal-meta">${d.partner||''} &middot; ${d.rep||''}</div>
+        </div>
+        <div style="font-family:var(--mono);font-weight:700;font-size:15px;color:var(--elmi-red);margin-left:auto;padding-right:20px">${d.revenue>0?fmtE(d.revenue):'0 €'}</div>
+        <a href="https://elmi-power-gmbh1.odoo.com/odoo/crm/${d.id}" target="_blank" rel="noopener"
+           style="font-size:11px;color:var(--fg3);padding-right:14px;white-space:nowrap;text-decoration:none">
+          <i data-lucide="external-link" size="11"></i> Odoo
+        </a>
+      </div>`).join('')
+    : '<div style="padding:24px;text-align:center;color:var(--fg3)">Keine Closed Lost Deals gefunden.</div>';
+  document.getElementById('odoo-modal-bg').classList.add('open');
+  lucide.createIcons();
+}
+
 function openOrdersModal() {
   const deals = ALL_LEADS.filter(d=>stageNum(d.stage)===99).sort((a,b)=>b.revenue-a.revenue);
   const total = deals.reduce((s,d)=>s+(d.revenue||0),0);
@@ -2372,6 +2402,12 @@ function renderDashboardKPIs(){
   const s3rev=s3list.reduce((s,d)=>s+(d.revenue||0),0);
   ge('kpi-stage3').textContent=s3list.length;
   ge('kpi-stage3-c').innerHTML='<i data-lucide="file-search" size="11"></i> '+fmtKpiV(s3rev).replace(/<[^>]+>/g,'')+'  Volumen &#8594;';
+
+  // Closed Lost (Stage X)
+  const lostList=ALL_LEADS.filter(d=>/stage\s*x|closed.?lost/i.test(d.stage||''));
+  const lostRev=lostList.reduce((s,d)=>s+(d.revenue||0),0);
+  ge('kpi-lost').textContent=lostList.length;
+  ge('kpi-lost-c').innerHTML='<i data-lucide="x-circle" size="11"></i> '+lostList.length+' Deals'+(lostRev>0?' · '+fmtKpiV(lostRev).replace(/<[^>]+>/g,'')+' Volumen':'')+'  &#8594;';
   ge('dyn-exec-weighted').innerHTML=fmtKpiV(weighted);
 
   // Sales Rep KPI cards — dynamisch aus ALL_LEADS
