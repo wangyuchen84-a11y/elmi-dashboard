@@ -3367,13 +3367,13 @@ const PEvo=(function(){
   // ── DOM builders ──────────────────────────────────────────────────────────
   function buildChartDOM(subtitle=''){
     document.getElementById('evo-charts-area').innerHTML=
-      '<div class="cgrid" style="margin-bottom:0">'
+      '<div style="display:flex;flex-direction:column;gap:14px;margin-bottom:0">'
       +'<div class="card"><div class="card-t">Anzahl aktiver Deals nach Stage'
       +' <span>Monatsende-Snapshot'+(subtitle?' &middot; '+subtitle:'')+'</span></div>'
-      +'<div style="height:260px"><canvas id="evo-c1"></canvas></div></div>'
+      +'<div style="position:relative;width:100%;height:clamp(260px,35vw,420px)"><canvas id="evo-c1"></canvas></div></div>'
       +'<div class="card"><div class="card-t">Pipeline-Volumen nach Stage &mdash; Brutto'
       +' <span>EUR'+(subtitle?' &middot; '+subtitle:'')+'</span></div>'
-      +'<div style="height:260px"><canvas id="evo-c2"></canvas></div></div>'
+      +'<div style="position:relative;width:100%;height:clamp(260px,35vw,420px)"><canvas id="evo-c2"></canvas></div></div>'
       +'</div>';
   }
 
@@ -3426,13 +3426,13 @@ const PEvo=(function(){
       +'<strong>&#9432; Keine historischen Daten</strong> &mdash; '
       +'Angezeigt wird die <strong>aktuelle Stage-Verteilung</strong> aus lokalen Daten (alle 12 Monate identisch, kein Verlauf). '
       +'F&#252;r echte Stage-Historie: „Von Odoo neu laden" im Browser mit aktiver Odoo-Session.</div>'
-      +'<div class="cgrid" style="margin-bottom:0">'
+      +'<div style="display:flex;flex-direction:column;gap:14px;margin-bottom:0">'
       +'<div class="card"><div class="card-t">Anzahl aktiver Deals nach Stage'
       +' <span>Aktueller Stand &mdash; kein Verlauf</span></div>'
-      +'<div style="height:260px"><canvas id="evo-c1"></canvas></div></div>'
+      +'<div style="position:relative;width:100%;height:clamp(260px,35vw,420px)"><canvas id="evo-c1"></canvas></div></div>'
       +'<div class="card"><div class="card-t">Pipeline-Volumen nach Stage &mdash; Brutto'
       +' <span>EUR &mdash; kein Verlauf</span></div>'
-      +'<div style="height:260px"><canvas id="evo-c2"></canvas></div></div>'
+      +'<div style="position:relative;width:100%;height:clamp(260px,35vw,420px)"><canvas id="evo-c2"></canvas></div></div>'
       +'</div>';
     const pts=mkPoints();
     // empty events → buildSnapshots falls back to current getDealStageKey for every snapshot
