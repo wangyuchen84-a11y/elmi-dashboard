@@ -2999,14 +2999,19 @@ const PEvo=(function(){
       }
       await refreshCharts();
     }catch(e){
-      const isCors=e.message==='Failed to fetch'
-        ||e.message.includes('NetworkError')||e.message.includes('Load failed')
-        ||e.message.includes('CORS')||e.message.includes('network');
-      if(isCors){
+      console.warn('PEvo sync error:',e);
+      // Bei jedem Netzwerk-/Odoo-Fehler: statischen Fallback zeigen wenn DB leer,
+      // sonst Charts aus vorhandenen DB-Daten anzeigen + Fehlermeldung im Status
+      let dbEmpty=true;
+      try{dbEmpty=(await countAllEvents())===0;}catch(_){}
+      if(dbEmpty){
         showStaticFallback();
+        // Hinweis ergänzen dass Sync fehlschlug
+        const el=document.getElementById('evo-status');
+        if(el) el.innerHTML+=' &nbsp;<span style="color:var(--elmi-red)">&#9888; Sync fehlgeschlagen: '+e.message+'</span>';
       } else {
-        setStatus('⚠ Synchronisierung fehlgeschlagen: '+e.message);
-        if(!document.getElementById('evo-c1')) showSyncError(e.message);
+        setStatus('⚠ Sync fehlgeschlagen ('+e.message+') — zeige bestehende lokale Daten');
+        await refreshCharts();
       }
     }finally{
       if(btn){btn.disabled=false;btn.innerHTML=origHtml;}
