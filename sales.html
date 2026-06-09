@@ -3301,26 +3301,28 @@ const PEvo=(function(){
     for(const[,list]of byDeal) list.sort((a,b)=>new Date(a.date)-new Date(b.date));
     const cnt=Object.fromEntries(SK.map(k=>[k,[]]));
     const vol=Object.fromEntries(SK.map(k=>[k,[]]));
+    const dealsByMonth=[];
     for(const mp of pts){
       const snap=Object.fromEntries(SK.map(k=>[k,0]));
       const snapV=Object.fromEntries(SK.map(k=>[k,0]));
+      const snapDeals=Object.fromEntries(SK.map(k=>[k,[]]));
       for(const deal of deals){
         const evList=byDeal.get(deal.id)||[];
         let sk=null;
         for(const ev of evList){
           if(new Date(ev.date)<=mp.snapshotDate) sk=ev.stageKey; else break;
         }
-        // Deal hat Events, aber keines vor dem Snapshot → existierte damals noch nicht
         if(!sk && evList.length>0) continue;
-        // Deal ohne jegliche Events → Fallback auf aktuellen Stand (nur für deals ohne Historie)
         if(!sk) sk=getDealStageKey(deal);
         if(sk&&snap[sk]!==undefined){
           snap[sk]++; snapV[sk]+=deal.revenue||0;
+          snapDeals[sk].push(deal);
         }
       }
       SK.forEach(k=>{cnt[k].push(snap[k]);vol[k].push(snapV[k]);});
+      dealsByMonth.push(snapDeals);
     }
-    return{cnt,vol};
+    return{cnt,vol,dealsByMonth};
   }
 
   // ── Charts ────────────────────────────────────────────────────────────────
@@ -3328,6 +3330,53 @@ const PEvo=(function(){
 
   // Stage-Sichtbarkeit: alle aktiv zu Beginn
   const _stageVisible=Object.fromEntries(SK.map(k=>[k,true]));
+  let _snapDeals=[];
+  let _snapLabels=[];
+
+  function openEvoModal(monthIdx,stageIdx){
+    if(!_snapDeals[monthIdx]) return;
+    const sk=SK[stageIdx];
+    if(sk===undefined) return;
+    const deals=(_snapDeals[monthIdx][sk]||[]).slice().sort((a,b)=>(b.revenue||0)-(a.revenue||0));
+    const label=_snapLabels[monthIdx]||'';
+    const stageName=SL[stageIdx]||sk;
+    const totalRev=deals.reduce((s,d)=>s+(d.revenue||0),0);
+    const totalW=deals.reduce((s,d)=>s+d.revenue*getConfiguredProb(d),0);
+    document.getElementById('odoo-m-title').textContent=label+' — '+stageName;
+    document.getElementById('odoo-m-sub').textContent=deals.length+' Deal'+(deals.length!==1?'s':'')+' · Brutto '+fmtE(totalRev);
+    document.getElementById('odoo-m-stats').innerHTML=
+      `<div class="odoo-m-stat">Deals: <strong>${deals.length}</strong></div>`+
+      `<div class="odoo-m-stat">Brutto: <strong>${fmtE(totalRev)}</strong></div>`+
+      `<div class="odoo-m-stat">Gewichtet: <strong style="color:var(--success)">${fmtE(totalW)}</strong></div>`;
+    document.getElementById('odoo-m-body').innerHTML=deals.length?deals.map((d,i)=>{
+      const w=Math.round((d.revenue||0)*getConfiguredProb(d));
+      const cfgPct=Math.round(getConfiguredProb(d)*100);
+      const pc=cfgPct>=70?'var(--success)':cfgPct>=40?'var(--elmi-tang)':'var(--fg3)';
+      return`<div class="odoo-deal-row">
+        <div class="odoo-deal-num">${i+1}</div>
+        <div class="odoo-deal-info">
+          <div class="odoo-deal-name">${d.name}</div>
+          <div class="odoo-deal-meta">
+            <span>${d.partner||'—'}</span>
+            <span style="color:var(--fg3)">|</span>
+            <span>${d.rep||'—'}</span>
+            <span style="color:var(--fg3)">|</span>
+            <span style="color:${pc};font-weight:700">${cfgPct}%</span>
+          </div>
+        </div>
+        <div style="text-align:right;margin-left:auto;padding-right:8px;white-space:nowrap">
+          <div style="font-family:var(--mono);font-weight:700;font-size:13px">${fmtE(d.revenue)}</div>
+          <div style="font-family:var(--mono);font-size:11px;color:${pc}">gew. ${fmtE(w)}</div>
+        </div>
+        <a href="${ODOO_BASE}/odoo/crm/${d.id}" target="_blank"
+           style="padding:5px 10px;border-radius:6px;background:var(--bg2);border:1px solid var(--bd1);
+           color:var(--fg2);font-size:11px;text-decoration:none;white-space:nowrap;flex-shrink:0"
+           title="In Odoo öffnen">↗ Odoo</a>
+      </div>`;
+    }).join(''):`<div style="padding:24px;text-align:center;color:var(--fg3)">Keine Deals in dieser Stage / diesem Monat.</div>`;
+    document.getElementById('odoo-modal-bg').classList.add('open');
+    lucide.createIcons();
+  }
 
   function toggleStage(sk){
     _stageVisible[sk]=!_stageVisible[sk];
@@ -3343,10 +3392,12 @@ const PEvo=(function(){
     });
   }
 
-  function renderCharts(cnt,vol,pts){
+  function renderCharts(cnt,vol,pts,dealsByMonth){
     _charts.forEach(c=>{try{c.destroy();}catch(_){}});
     _charts=[];
-    const labels=pts.map(p=>p.label);
+    _snapDeals=dealsByMonth||[];
+    _snapLabels=pts.map(p=>p.label);
+    const labels=_snapLabels;
 
     const mkDS=src=>SK.map((k,i)=>({label:SL[i],data:src[k],
       backgroundColor:SC[i],borderRadius:3,borderSkipped:false,stack:'a',
@@ -3359,24 +3410,33 @@ const PEvo=(function(){
     const c1=document.getElementById('evo-c1'),c2=document.getElementById('evo-c2');
     if(!c1||!c2) return;
 
+    const onClickChart=(e,els)=>{
+      if(!els.length) return;
+      openEvoModal(els[0].index,els[0].datasetIndex);
+    };
+
     // Chart 1: Absolute Anzahl Deals
     _charts.push(new Chart(c1,{type:'bar',data:{labels,datasets:mkDS(cnt)},
       options:{...BASE,interaction:{mode:'index',intersect:false},
+        onClick:onClickChart,
         plugins:{...BASE.plugins,legend:{display:false},
           tooltip:{callbacks:{
             label:it=>SL[it.datasetIndex]+': '+(it.parsed.y||0)+' Deals',
-            footer:its=>'Gesamt: '+getTotal(its[0].dataIndex)+' Deals'
+            footer:its=>'Gesamt: '+getTotal(its[0].dataIndex)+' Deals · klicken für Details'
           }}},
         scales:{...stk,y:{...stk.y,ticks:{...BASE.scales.y.ticks,precision:0,stepSize:10}}}}}));
+    c1.style.cursor='pointer';
 
     // Chart 2: Volumen in €
     _charts.push(new Chart(c2,{type:'bar',data:{labels,datasets:mkDS(vol)},
       options:{...BASE,interaction:{mode:'index',intersect:false},
+        onClick:onClickChart,
         plugins:{...BASE.plugins,legend:{display:false},
           tooltip:{callbacks:{
             label:it=>SL[it.datasetIndex]+': '+fmtV(it.parsed.y),
-            footer:its=>'Gesamt: '+fmtV(its.reduce((s,x)=>s+x.parsed.y,0))}}},
+            footer:its=>'Gesamt: '+fmtV(its.reduce((s,x)=>s+x.parsed.y,0))+' · klicken für Details'}}},
         scales:{...stk,y:{...stk.y,ticks:{...BASE.scales.y.ticks,callback:fmtV}}}}}));
+    c2.style.cursor='pointer';
 
     // Buttons nach Render auf korrekten Zustand setzen
     SK.forEach(k=>{
@@ -3488,8 +3548,8 @@ const PEvo=(function(){
       +'</div>';
     const pts=mkPoints();
     // empty events → buildSnapshots falls back to current getDealStageKey for every snapshot
-    const{cnt,vol}=buildSnapshots([],getDeals(),pts);
-    renderCharts(cnt,vol,pts);
+    const{cnt,vol,dealsByMonth}=buildSnapshots([],getDeals(),pts);
+    renderCharts(cnt,vol,pts,dealsByMonth);
     updateKPIs([],pts);
     // Update status to reflect static mode
     const el=document.getElementById('evo-status');
