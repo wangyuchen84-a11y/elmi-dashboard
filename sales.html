@@ -1131,7 +1131,7 @@ async function computeHistoricalStageStats(){
     byDeal[ev.dealId].push(ev);
   }
 
-  const nextOf={S0:'S1',S1:'S2',S2:'S3',S3:'S4',S4:'S5'};
+  const nextOf={S0:'S1',S1:'S2',S2:'S3',S3:'S4',S4:'WON'};
   const stats={};
   for(const sk of ['S0','S1','S2','S3','S4'])
     stats[sk]={entries:0,conversions:0,durations:[]};
