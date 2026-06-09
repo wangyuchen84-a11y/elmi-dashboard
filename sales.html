@@ -451,7 +451,8 @@ canvas.clickable{cursor:pointer}
       <span class="eyebrow">Pipeline-Analyse &mdash; Balken anklickbar</span>
       <div class="cgrid">
         <div class="card"><div class="card-t">Volumen nach Stage <span>klick = Deals anzeigen</span></div><div style="height:230px"><canvas id="c1"></canvas></div></div>
-        <div class="card"><div class="card-t">Gewichtet je Sales Rep</div><div style="height:230px"><canvas id="c2"></canvas></div></div>
+        <div class="card"><div class="card-t">Gewichtet je Sales Rep <span>Volumen × Wahrsch. (Stage Config)</span></div><div style="height:230px"><canvas id="c2"></canvas></div></div>
+        <div class="card"><div class="card-t">Auftragsvolumen je Sales Rep <span>Brutto-Pipeline</span></div><div style="height:230px"><canvas id="c2b"></canvas></div></div>
         <div class="card wide"><div class="card-t">Fakturierter Umsatz 2026 <span>nach Monat</span></div><div style="height:170px"><canvas id="c3"></canvas></div></div>
       </div>
     </div>
@@ -1405,6 +1406,23 @@ function openDrawerByStageKey(key){
       scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v+'K'}}}}
   });
   document.getElementById('c2').style.cursor='pointer';
+})();
+// c2b — Auftragsvolumen je Sales Rep (Brutto, sortiert nach Revenue)
+(function(){
+  const colPalette=[C.red,C.tang,C.orange,C.purple,'#2563EB','#0891B2','#7C3AED','#059669','#D97706'];
+  const allReps=[...new Set(ALL_LEADS.map(d=>d.rep).filter(Boolean))];
+  const repData=allReps.map(r=>({r,v:byRp(r).revenue})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  const reps=repData.map(x=>x.r);
+  const vals=repData.map(x=>Math.round(x.v/1000));
+  const cols=reps.map((_,i)=>colPalette[i%colPalette.length]);
+  new Chart(document.getElementById('c2b'),{
+    type:'bar',data:{labels:reps.map(r=>r.split(' ').slice(-1)[0]),
+      datasets:[{label:'Brutto (T€)',data:vals,backgroundColor:cols,borderRadius:6,borderSkipped:false}]},
+    options:{...BASE,plugins:{legend:{display:false},tooltip:{callbacks:{title:([t])=>reps[t.dataIndex]}}},
+      onClick(e,els){if(els.length)openDrawer('all','revenue',reps[els[0].index]);},
+      scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v+'K'}}}}
+  });
+  document.getElementById('c2b').style.cursor='pointer';
 })();
 // c3 — monthly revenue, klickbar → öffnet Rechnungsdetail-Popup
 const MONTHLY_INVOICES = [[{"number":"RE/2026/00001","partner":"ATEM Networks Deutschland GmbH, Jessica Müller-Feist","net":1000.0,"total":1190.0,"date":"2026-03-11","id":1}],[{"number":"RE/2026/00002","partner":"EFG Cordes & Graefe Brand KG, Peter Dewender","net":134118.26,"total":159600.73,"date":"2026-04-20","id":3},{"number":"RE/2026/00004","partner":"EFG Cordes & Graefe Brand KG","net":86590.45,"total":103042.64,"date":"2026-04-22","id":6}],[{"number":"RE/2026/00005","partner":"HS - C. Hempelmann KG. Hannover","net":125824.5,"total":149731.16,"date":"2026-05-06","id":8},{"number":"RE/2026/00006","partner":"Jolt Energy GmbH","net":40000.0,"total":47600.0,"date":"2026-05-07","id":9},{"number":"RE/2026/00007","partner":"EFG Cordes & Graefe Brand KG, Peter Dewender","net":86590.45,"total":103042.63,"date":"2026-05-18","id":10},{"number":"RE/2026/00008","partner":"EFG Hessen KG, Christian Weißenstein","net":850.0,"total":1011.5,"date":"2026-05-27","id":43},{"number":"RE/2026/00009","partner":"EEFA GmbH, Jan Wojtun","net":1040.2,"total":1237.84,"date":"2026-05-27","id":44}]];
