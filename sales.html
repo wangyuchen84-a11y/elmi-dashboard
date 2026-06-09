@@ -2978,10 +2978,15 @@ const PEvo=(function(){
       }
       await refreshCharts();
     }catch(e){
-      // Keep existing charts if present, only show error in status
-      setStatus('⚠ Synchronisierung fehlgeschlagen: '+e.message);
-      if(!document.getElementById('evo-c1')){
-        showSyncError(e.message);
+      const isCors=e.message==='Failed to fetch'
+        ||e.message.includes('NetworkError')||e.message.includes('Load failed')
+        ||e.message.includes('CORS')||e.message.includes('network');
+      if(isCors){
+        // CORS/network block → show static fallback with explanation
+        showStaticFallback();
+      } else {
+        setStatus('⚠ Synchronisierung fehlgeschlagen: '+e.message);
+        if(!document.getElementById('evo-c1')) showSyncError(e.message);
       }
     }finally{
       if(btn){btn.disabled=false;btn.innerHTML=origHtml;}
@@ -3124,15 +3129,45 @@ const PEvo=(function(){
     });
   }
 
+  // ── Static fallback: current stage distribution from ALL_LEADS ───────────
+  function showStaticFallback(){
+    const area=document.getElementById('evo-charts-area');
+    area.innerHTML=
+      '<div style="background:rgba(226,161,0,.08);border:1px solid rgba(226,161,0,.3);'
+      +'border-radius:8px;padding:9px 14px;font-size:11px;color:#8a6300;margin-bottom:14px;line-height:1.6">'
+      +'<strong>&#9432; Keine historischen Daten</strong> &mdash; '
+      +'Angezeigt wird die <strong>aktuelle Stage-Verteilung</strong> aus lokalen Daten (alle 12 Monate identisch, kein Verlauf). '
+      +'F&#252;r echte Stage-Historie: „Von Odoo neu laden" im Browser mit aktiver Odoo-Session.</div>'
+      +'<div class="cgrid" style="margin-bottom:0">'
+      +'<div class="card"><div class="card-t">Anzahl aktiver Deals nach Stage'
+      +' <span>Aktueller Stand &mdash; kein Verlauf</span></div>'
+      +'<div style="height:260px"><canvas id="evo-c1"></canvas></div></div>'
+      +'<div class="card"><div class="card-t">Pipeline-Volumen nach Stage &mdash; Brutto'
+      +' <span>EUR &mdash; kein Verlauf</span></div>'
+      +'<div style="height:260px"><canvas id="evo-c2"></canvas></div></div>'
+      +'</div>';
+    const pts=mkPoints();
+    // empty events → buildSnapshots falls back to current getDealStageKey for every snapshot
+    const{cnt,vol}=buildSnapshots([],getDeals(),pts);
+    renderCharts(cnt,vol,pts);
+    updateKPIs([],pts);
+    // Update status to reflect static mode
+    const el=document.getElementById('evo-status');
+    if(el) el.innerHTML='<span style="color:#8a6300">&#9432; Statische Ansicht — historische Daten nur nach Odoo-Sync verfügbar</span>';
+  }
+
   // ── Public: refresh charts from DB ───────────────────────────────────────
   async function refreshCharts(){
     try{
       const events=await loadEventsFromDB();
       _eventsCache=events;
       if(!events.length){
-        const total=await countAllEvents();
-        if(!total){showEmptyState();return;}
-        // events exist but outside 12-month window — show empty with message
+        let total=0;
+        try{total=await countAllEvents();}catch(_){}
+        if(!total){
+          showStaticFallback();
+          return;
+        }
         document.getElementById('evo-charts-area').innerHTML=
           '<div style="padding:24px;text-align:center;color:var(--fg3)">Keine Ereignisse im 12-Monats-Fenster. Odoo erneut laden um aktuelle Daten zu erhalten.</div>';
         return;
@@ -3149,7 +3184,7 @@ const PEvo=(function(){
           +'border-radius:10px;padding:16px 20px;color:#8a6300">'
           +'Lokale Speicherung nicht verfügbar — bitte normalen Browser-Modus nutzen (kein Privat-Modus).</div>';
       } else {
-        showEmptyState();
+        showStaticFallback();
       }
     }
   }
