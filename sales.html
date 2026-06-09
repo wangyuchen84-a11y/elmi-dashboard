@@ -3326,61 +3326,50 @@ const PEvo=(function(){
   // ── Charts ────────────────────────────────────────────────────────────────
   const fmtV=v=>v>=1e6?(v/1e6).toFixed(1)+' Mio':v>=1000?Math.round(v/1000)+'K':v;
 
+  // Stage-Sichtbarkeit: alle aktiv zu Beginn
+  const _stageVisible=Object.fromEntries(SK.map(k=>[k,true]));
+
+  function toggleStage(sk){
+    _stageVisible[sk]=!_stageVisible[sk];
+    // Button-Style aktualisieren
+    const btn=document.getElementById('evo-stg-btn-'+sk);
+    if(btn) btn.style.opacity=_stageVisible[sk]?'1':'0.35';
+    // Beide Charts aktualisieren
+    _charts.forEach(chart=>{
+      const idx=SK.indexOf(sk);
+      if(idx<0) return;
+      chart.setDatasetVisibility(idx,_stageVisible[sk]);
+      chart.update();
+    });
+  }
+
   function renderCharts(cnt,vol,pts){
     _charts.forEach(c=>{try{c.destroy();}catch(_){}});
     _charts=[];
     const labels=pts.map(p=>p.label);
-    const n=pts.length;
-
-    // Absolute totals per month for c1 label overlay
-    const cntTotals=Array.from({length:n},(_,i)=>SK.reduce((s,k)=>s+(cnt[k][i]||0),0));
-
-    // Convert cnt to % per month (100% stacked)
-    const pct={};
-    SK.forEach(k=>{
-      pct[k]=cnt[k].map((v,i)=>cntTotals[i]>0?Math.round(v/cntTotals[i]*1000)/10:0);
-    });
 
     const mkDS=src=>SK.map((k,i)=>({label:SL[i],data:src[k],
-      backgroundColor:SC[i],borderRadius:3,borderSkipped:false,stack:'a'}));
+      backgroundColor:SC[i],borderRadius:3,borderSkipped:false,stack:'a',
+      hidden:!_stageVisible[k]}));
     const stk={x:{...BASE.scales.x,stacked:true},y:{...BASE.scales.y,stacked:true}};
 
-    // Custom plugin: draw absolute total above each bar
-    const totalLabelPlugin={
-      id:'evoTotals',
-      afterDatasetsDraw(chart){
-        const{ctx,scales:{x,y}}=chart;
-        ctx.save();
-        ctx.font="bold 11px 'JetBrains Mono'";
-        ctx.fillStyle='#6B6B76';
-        ctx.textAlign='center';
-        ctx.textBaseline='bottom';
-        cntTotals.forEach((total,i)=>{
-          if(!total) return;
-          const xPos=x.getPixelForValue(i);
-          const yPos=y.getPixelForValue(100)-4;
-          ctx.fillText(total,xPos,yPos);
-        });
-        ctx.restore();
-      }
-    };
+    // Totals pro Monat (nur sichtbare Stages) für Tooltip-Footer
+    const getTotal=(i)=>SK.reduce((s,k)=>s+(_stageVisible[k]?(cnt[k][i]||0):0),0);
 
     const c1=document.getElementById('evo-c1'),c2=document.getElementById('evo-c2');
     if(!c1||!c2) return;
-    _charts.push(new Chart(c1,{type:'bar',data:{labels,datasets:mkDS(pct)},
-      plugins:[totalLabelPlugin],
+
+    // Chart 1: Absolute Anzahl Deals
+    _charts.push(new Chart(c1,{type:'bar',data:{labels,datasets:mkDS(cnt)},
       options:{...BASE,interaction:{mode:'index',intersect:false},
-        plugins:{...BASE.plugins,legend:{...BASE.plugins.legend,position:'top'},
+        plugins:{...BASE.plugins,legend:{display:false},
           tooltip:{callbacks:{
-            label:it=>{
-              const abs=cnt[SK[it.datasetIndex]][it.dataIndex]||0;
-              return SL[it.datasetIndex]+': '+it.parsed.y.toFixed(1)+'% ('+abs+' Deals)';
-            },
-            footer:its=>'Gesamt: '+cntTotals[its[0].dataIndex]+' Deals'
+            label:it=>SL[it.datasetIndex]+': '+(it.parsed.y||0)+' Deals',
+            footer:its=>'Gesamt: '+getTotal(its[0].dataIndex)+' Deals'
           }}},
-        scales:{...stk,
-          y:{...stk.y,min:0,max:100,
-            ticks:{...BASE.scales.y.ticks,callback:v=>v+'%',stepSize:25}}}}}));
+        scales:{...stk,y:{...stk.y,ticks:{...BASE.scales.y.ticks,precision:0,stepSize:10}}}}}));
+
+    // Chart 2: Volumen in €
     _charts.push(new Chart(c2,{type:'bar',data:{labels,datasets:mkDS(vol)},
       options:{...BASE,interaction:{mode:'index',intersect:false},
         plugins:{...BASE.plugins,legend:{display:false},
@@ -3388,6 +3377,12 @@ const PEvo=(function(){
             label:it=>SL[it.datasetIndex]+': '+fmtV(it.parsed.y),
             footer:its=>'Gesamt: '+fmtV(its.reduce((s,x)=>s+x.parsed.y,0))}}},
         scales:{...stk,y:{...stk.y,ticks:{...BASE.scales.y.ticks,callback:fmtV}}}}}));
+
+    // Buttons nach Render auf korrekten Zustand setzen
+    SK.forEach(k=>{
+      const btn=document.getElementById('evo-stg-btn-'+k);
+      if(btn) btn.style.opacity=_stageVisible[k]?'1':'0.35';
+    });
   }
 
   // ── KPIs ──────────────────────────────────────────────────────────────────
@@ -3409,11 +3404,22 @@ const PEvo=(function(){
   }
 
   // ── DOM builders ──────────────────────────────────────────────────────────
+  function _stageToggleBtns(){
+    return '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">'
+      +SK.map((k,i)=>`<button id="evo-stg-btn-${k}" onclick="PEvo.toggleStage('${k}')"
+        style="padding:4px 10px;border-radius:20px;border:2px solid ${SC[i]};background:${SC[i]}22;
+        color:${SC[i]};font-size:11px;font-weight:700;font-family:var(--mono);cursor:pointer;
+        transition:opacity .15s" title="Stage ein-/ausblenden">${SL[i].split(' ')[0]}&nbsp;${SL[i].split(' ').slice(1).join(' ')}</button>`).join('')
+      +'</div>';
+  }
+
   function buildChartDOM(subtitle=''){
     document.getElementById('evo-charts-area').innerHTML=
       '<div style="display:flex;flex-direction:column;gap:14px;margin-bottom:0">'
-      +'<div class="card"><div class="card-t">Anzahl aktiver Deals nach Stage'
+      +'<div class="card">'
+      +'<div class="card-t">Anzahl aktiver Deals nach Stage'
       +' <span>Monatsende-Snapshot'+(subtitle?' &middot; '+subtitle:'')+'</span></div>'
+      +_stageToggleBtns()
       +'<div style="position:relative;width:100%;height:clamp(260px,35vw,420px)"><canvas id="evo-c1"></canvas></div></div>'
       +'<div class="card"><div class="card-t">Pipeline-Volumen nach Stage &mdash; Brutto'
       +' <span>EUR'+(subtitle?' &middot; '+subtitle:'')+'</span></div>'
@@ -3471,8 +3477,10 @@ const PEvo=(function(){
       +'Angezeigt wird die <strong>aktuelle Stage-Verteilung</strong> aus lokalen Daten (alle 12 Monate identisch, kein Verlauf). '
       +'F&#252;r echte Stage-Historie: „Von Odoo neu laden" im Browser mit aktiver Odoo-Session.</div>'
       +'<div style="display:flex;flex-direction:column;gap:14px;margin-bottom:0">'
-      +'<div class="card"><div class="card-t">Anzahl aktiver Deals nach Stage'
+      +'<div class="card">'
+      +'<div class="card-t">Anzahl aktiver Deals nach Stage'
       +' <span>Aktueller Stand &mdash; kein Verlauf</span></div>'
+      +_stageToggleBtns()
       +'<div style="position:relative;width:100%;height:clamp(260px,35vw,420px)"><canvas id="evo-c1"></canvas></div></div>'
       +'<div class="card"><div class="card-t">Pipeline-Volumen nach Stage &mdash; Brutto'
       +' <span>EUR &mdash; kein Verlauf</span></div>'
@@ -3550,6 +3558,7 @@ const PEvo=(function(){
     init,
     applyFilter,
     refreshCharts,
+    toggleStage,
     syncFromOdoo:async()=>{
       const lastSync=await dbGet('meta','last_sync').catch(()=>null);
       if(!lastSync){
