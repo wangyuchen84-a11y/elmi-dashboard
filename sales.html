@@ -835,12 +835,21 @@ canvas.clickable{cursor:pointer}
       <!-- Header + action buttons -->
       <div class="page-hdr" style="margin-bottom:12px;align-items:flex-start;flex-wrap:wrap;gap:10px">
         <span class="eyebrow" style="margin-bottom:0">Pipeline Evolution &mdash; Stage-Entwicklung &#252;ber Zeit</span>
-        <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+        <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap">
+          <input type="file" id="evo-json-input" accept=".json" style="display:none"
+            onchange="PEvo.handleJSONFile(this.files[0]);this.value=''">
           <button class="btn ghost" id="evo-btn-sync" onclick="PEvo.syncFromOdoo()">
             <i data-lucide="cloud-download" size="13"></i> Von Odoo neu laden
           </button>
           <button class="btn primary" onclick="PEvo.refreshCharts()">
             <i data-lucide="refresh-cw" size="13"></i> Charts aktualisieren
+          </button>
+          <button onclick="document.getElementById('evo-json-input').click()"
+            style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--fg3);
+              font-family:var(--font);padding:5px 8px;border-radius:6px;
+              transition:color var(--dur) var(--ease)"
+            onmouseover="this.style.color='var(--fg1)'" onmouseout="this.style.color='var(--fg3)'">
+            📂 JSON neu importieren
           </button>
         </div>
       </div>
@@ -2796,7 +2805,7 @@ const PEvo=(function(){
   async function openDB(){
     if(_db) return _db;
     return new Promise((res,rej)=>{
-      const req=indexedDB.open('elmi_evo_db',1);
+      const req=indexedDB.open('elmi_evo_db',2);
       req.onupgradeneeded=e=>{
         const db=e.target.result;
         if(!db.objectStoreNames.contains('stage_events')){
@@ -2804,6 +2813,8 @@ const PEvo=(function(){
           s.createIndex('by_date','date');
           s.createIndex('by_deal','dealId');
         }
+        if(!db.objectStoreNames.contains('deals'))
+          db.createObjectStore('deals',{keyPath:'id'});
         if(!db.objectStoreNames.contains('meta'))
           db.createObjectStore('meta',{keyPath:'key'});
       };
@@ -2841,6 +2852,81 @@ const PEvo=(function(){
     });
   }
 
+  // ── normalizeRawTracking — shared by JSON import and Odoo delta-sync ─────
+  // Dates stored as Date objects so IDBKeyRange.lowerBound(Date) works.
+  function normalizeRawTracking(rawTV,msgMap){
+    const out=[];
+    for(const tv of rawTV){
+      const mid=Array.isArray(tv.mail_message_id)?tv.mail_message_id[0]:tv.mail_message_id;
+      const msg=msgMap.get(mid);
+      if(!msg) continue;
+      const sk=getDealStageKey({stage:tv.new_value_char});
+      if(!sk) continue;
+      out.push({
+        id:`${msg.res_id}_${mid}`,
+        dealId:msg.res_id,
+        date:new Date(typeof msg.date==='string'?msg.date.replace(' ','T'):msg.date),
+        fromStage:tv.old_value_char||'',
+        toStage:tv.new_value_char||'',
+        stageKey:sk
+      });
+    }
+    return out;
+  }
+
+  // ── JSON Import (stage_history.json → IndexedDB) ──────────────────────────
+  async function importJSON(file){
+    setStatus('Lese JSON-Datei…');
+    let payload;
+    try{
+      const text=await file.text();
+      payload=JSON.parse(text);
+    }catch{
+      setStatus('<span style="color:var(--elmi-red)">&#10005; Ungültige JSON-Datei — bitte stage_history.json wählen</span>',true);
+      return;
+    }
+    if(!payload.meta||!payload.events||!payload.deals){
+      setStatus('<span style="color:var(--elmi-red)">&#10005; Dateiformat nicht erkannt — bitte stage_history.json aus dem Extractor nutzen</span>',true);
+      return;
+    }
+    if(payload.meta.format_version!=='1.0'){
+      setStatus(`<span style="color:var(--elmi-red)">&#10005; Unbekannte Format-Version: ${payload.meta.format_version}</span>`,true);
+      return;
+    }
+    const{events,deals,meta}=payload;
+    setStatus(`Importiere ${events.length.toLocaleString('de')} Ereignisse…`);
+    const db=await openDB();
+    // put() — idempotent, bei Re-Import werden bestehende IDs überschrieben
+    const tx=db.transaction(['stage_events','deals','meta'],'readwrite');
+    for(const ev of events){
+      tx.objectStore('stage_events').put({
+        ...ev,
+        // store as Date object — IDBKeyRange.lowerBound(Date) in loadEventsFromDB works correctly
+        date:ev.date instanceof Date?ev.date:new Date(typeof ev.date==='string'?ev.date:ev.date),
+        // Python extractor uses 'toStageKey'; fallback to name-based lookup
+        stageKey:ev.stageKey||ev.toStageKey||getDealStageKey({stage:ev.toStage||ev.new_value_char})||null
+      });
+    }
+    for(const deal of deals) tx.objectStore('deals').put(deal);
+    const newestDate=events.reduce((mx,e)=>e.date>mx?e.date:mx,'');
+    const now=new Date().toISOString();
+    tx.objectStore('meta').put({key:'json_import_at',         value:now});
+    tx.objectStore('meta').put({key:'json_export_at',         value:meta.exported_at||''});
+    tx.objectStore('meta').put({key:'total_events_at_import', value:events.length});
+    tx.objectStore('meta').put({key:'total_deals',            value:deals.length});
+    tx.objectStore('meta').put({key:'known_stage_names',      value:meta.known_stage_names||[]});
+    tx.objectStore('meta').put({key:'last_sync',              value:newestDate});
+    if(meta.field_label) tx.objectStore('meta').put({key:'detected_label',value:meta.field_label});
+    await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
+    const total=await countAllEvents();
+    const mtx=(await openDB()).transaction('meta','readwrite');
+    mtx.objectStore('meta').put({key:'total_events',value:total});
+    await new Promise((res,rej)=>{mtx.oncomplete=res;mtx.onerror=rej;});
+    setStatus(`&#10003; Import abgeschlossen &middot; ${events.length.toLocaleString('de')} Ereignisse &middot; ${deals.length} Deals`);
+    await refreshStatusLine();
+    await refreshCharts();
+  }
+
   // ── Status line helper ────────────────────────────────────────────────────
   function setStatus(html,isHtml=false){
     const el=document.getElementById('evo-status');
@@ -2849,23 +2935,42 @@ const PEvo=(function(){
   }
 
   async function refreshStatusLine(){
+    const jsonImportAt=await dbGet('meta','json_import_at');
     const lastSync=await dbGet('meta','last_sync');
+    const lastDeltaSync=await dbGet('meta','last_delta_sync');
     const totalEv=await dbGet('meta','total_events');
-    if(!lastSync){
-      setStatus('<span style="color:var(--warn)">Noch nicht synchronisiert &mdash; klicke „Von Odoo neu laden"</span>',true);
+    if(!jsonImportAt&&!lastSync){
+      setStatus('<span style="color:var(--warn)">Noch nicht synchronisiert &mdash; bitte zuerst stage_history.json importieren</span>',true);
       return;
     }
-    const ts=new Date(lastSync).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    const ageDays=Math.floor((Date.now()-new Date(lastSync).getTime())/86400000);
-    const staleBadge=ageDays>7
-      ?` <span style="background:rgba(226,161,0,.15);color:#8a6300;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:700">⚠ ${ageDays} Tage alt</span>`:''
-    setStatus(`Zuletzt synchronisiert: <strong>${ts}</strong> &middot; ${totalEv||0} Stage-Ereignisse in lokaler DB${staleBadge}`,true);
+    let line1='',line2='';
+    if(jsonImportAt){
+      const ts=new Date(jsonImportAt).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      const evCount=(await dbGet('meta','total_events_at_import'))||totalEv||0;
+      line1=`Historischer Import: ${ts} &middot; ${Number(evCount).toLocaleString('de')} Ereignisse (aus stage_history.json)`;
+      if(lastDeltaSync){
+        const ts2=new Date(lastDeltaSync).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+        const dc=(await dbGet('meta','last_delta_count'))||0;
+        line2=`Delta-Sync: ${ts2} &middot; +${dc} neue Ereignisse &middot; Gesamt: ${(totalEv||0).toLocaleString('de')}`;
+      } else {
+        line2='Delta-Sync: noch nicht ausgef&uuml;hrt';
+      }
+    } else {
+      // Legacy: DB aus früherem Odoo-Sync ohne JSON-Import-Workflow
+      const ts=new Date(lastSync).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      line1=`Zuletzt synchronisiert: <strong>${ts}</strong> &middot; ${totalEv||0} Stage-Ereignisse in lokaler DB`;
+    }
+    setStatus(line2?`${line1}<br>${line2}`:line1,true);
     // Stale badge on button
-    const btn=document.getElementById('evo-btn-sync');
-    if(btn){
-      btn.querySelectorAll('.evo-stale').forEach(x=>x.remove());
-      if(ageDays>7) btn.insertAdjacentHTML('beforeend',
-        `<span class="evo-stale" style="background:rgba(226,161,0,.2);color:#8a6300;padding:0 5px;border-radius:999px;font-size:9px;font-weight:700;margin-left:4px">⚠ ${ageDays}d</span>`);
+    const syncDate=lastDeltaSync||lastSync;
+    if(syncDate){
+      const ageDays=Math.floor((Date.now()-new Date(syncDate).getTime())/86400000);
+      const btn=document.getElementById('evo-btn-sync');
+      if(btn){
+        btn.querySelectorAll('.evo-stale').forEach(x=>x.remove());
+        if(ageDays>7) btn.insertAdjacentHTML('beforeend',
+          `<span class="evo-stale" style="background:rgba(226,161,0,.2);color:#8a6300;padding:0 5px;border-radius:999px;font-size:9px;font-weight:700;margin-left:4px">⚠ ${ageDays}d</span>`);
+      }
     }
   }
 
@@ -2924,32 +3029,39 @@ const PEvo=(function(){
     return new Map(msgs.map(m=>[m.id,m]));
   }
 
-  // ── Main sync: Odoo → IndexedDB (inkrementell) ───────────────────────────
-  // Erster Sync: holt alles der letzten 3 Jahre (full history).
-  // Jeder weitere Sync: holt nur Events seit dem letzten Sync-Zeitpunkt.
-  // Historische Events in der DB werden NIEMALS gelöscht — nur neue werden hinzugefügt (upsert by id).
+  // ── Delta-Sync: Odoo → IndexedDB (nur neue Events seit last_sync) ─────────
+  // Setzt last_sync voraus — wird durch JSON-Import gesetzt.
+  // Historische Events werden NIEMALS gelöscht — nur neue werden hinzugefügt (upsert).
   async function doSync(){
     const btn=document.getElementById('evo-btn-sync');
     const origHtml=btn?btn.innerHTML:'';
     if(btn){btn.disabled=true;btn.innerHTML='<div class="evo-spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:-3px;margin-right:6px"></div>Lädt…';}
     try{
-      // Cutoff: last_sync wenn vorhanden, sonst 3 Jahre zurück (erster Sync = volle Historie)
       const lastSync=await dbGet('meta','last_sync');
-      let cutoff;
-      if(lastSync){
-        cutoff=new Date(lastSync);
-        // 1 Stunde Puffer rückwärts um Lücken durch Zeitzone/Rounding zu vermeiden
-        cutoff.setHours(cutoff.getHours()-1);
-        setStatus(`Inkrementeller Sync ab ${cutoff.toLocaleString('de-DE')}…`);
-      } else {
-        cutoff=new Date(); cutoff.setFullYear(cutoff.getFullYear()-3);
-        setStatus('Erster Sync — lade vollständige Historie (bis 3 Jahre zurück)…');
+      if(!lastSync){
+        setStatus('<span style="color:var(--elmi-red)">&#9888; Kein Import-Datum gefunden &mdash; bitte zuerst stage_history.json importieren</span>',true);
+        return;
       }
-      const cutoffStr=cutoff.toISOString().slice(0,10);
+      // 1 Stunde Puffer rückwärts um Lücken durch Zeitzone/Rounding zu vermeiden
+      const cutoff=new Date(lastSync);
+      cutoff.setHours(cutoff.getHours()-1);
+      const cutoffStr=cutoff.toISOString().replace('T',' ').slice(0,19);
+      setStatus(`Delta-Sync ab ${cutoff.toLocaleString('de-DE')}…`);
+
+      // Detected field label (gespeichert beim JSON-Import oder Odoo-Auto-Detect)
+      const savedLabel=await dbGet('meta','detected_label');
+      if(savedLabel) _detectedLabel=savedLabel;
 
       let rawTV=null,msgMap=null;
       try{
         rawTV=await fetchWithFallback(cutoffStr);
+        // persist detected label for next sync
+        if(_detectedLabel){
+          const ldb=await openDB();
+          const ltx=ldb.transaction('meta','readwrite');
+          ltx.objectStore('meta').put({key:'detected_label',value:_detectedLabel});
+          await new Promise((res,rej)=>{ltx.oncomplete=res;ltx.onerror=rej;});
+        }
       }catch(err){
         console.warn('Direkter Call fehlgeschlagen, nutze Fallback:',err);
         const fb=await fetchFallback2Call(cutoffStr);
@@ -2958,59 +3070,46 @@ const PEvo=(function(){
       if(!msgMap) msgMap=await enrichDates(rawTV);
 
       setStatus('Verarbeite neue Daten…');
-      const newEvents=[];
-      for(const tv of rawTV){
-        const mid=Array.isArray(tv.mail_message_id)?tv.mail_message_id[0]:tv.mail_message_id;
-        const msg=msgMap.get(mid);
-        if(!msg) continue;
-        const sk=getDealStageKey({stage:tv.new_value_char});
-        if(!sk) continue;
-        newEvents.push({
-          id:`${msg.res_id}_${mid}`,
-          dealId:msg.res_id,
-          date:new Date(msg.date.replace(' ','T')),
-          fromStage:tv.old_value_char||'',
-          toStage:tv.new_value_char||'',
-          stageKey:sk
-        });
-      }
+      const newEvents=normalizeRawTracking(rawTV,msgMap);
       setStatus(`${newEvents.length} neue Stage-Ereignisse — schreibe in lokale DB…`);
 
       // Upsert (put) — keine clear(), historische Daten bleiben erhalten
       const db=await openDB();
       const tx=db.transaction(['stage_events','meta'],'readwrite');
-      const store=tx.objectStore('stage_events');
-      for(const ev of newEvents) store.put(ev);
+      for(const ev of newEvents) tx.objectStore('stage_events').put(ev);
       const now=new Date().toISOString();
-      tx.objectStore('meta').put({key:'last_sync',value:now});
+      // last_sync auf neuestes neues Event aktualisieren (oder bisherigen Wert behalten)
+      const newNewest=newEvents.length
+        ? newEvents.reduce((mx,e)=>e.date>mx?e.date:mx,new Date(lastSync)).toISOString()
+        : lastSync;
+      tx.objectStore('meta').put({key:'last_sync',       value:newNewest});
+      tx.objectStore('meta').put({key:'last_delta_sync', value:now});
+      tx.objectStore('meta').put({key:'last_delta_count',value:newEvents.length});
       await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=rej;});
 
-      // Gesamtanzahl NACH dem Merge zählen
+      // Gesamtanzahl NACH dem Merge zählen und speichern
       const total=await countAllEvents();
-      const metaDb=await openDB();
-      const mtx=metaDb.transaction('meta','readwrite');
+      const mtx=(await openDB()).transaction('meta','readwrite');
       mtx.objectStore('meta').put({key:'total_events',value:total});
       await new Promise((res,rej)=>{mtx.oncomplete=res;mtx.onerror=rej;});
 
       if(newEvents.length===0){
-        setStatus(`Keine neuen Ereignisse seit letztem Sync. Gesamt in DB: ${total} Stage-Ereignisse.`);
+        setStatus(`&#10003; Bereits auf aktuellem Stand &mdash; keine neuen Ereignisse seit letztem Sync. Gesamt: ${total.toLocaleString('de')} Ereignisse.`);
+        await refreshStatusLine();
       } else {
         await refreshStatusLine();
       }
       await refreshCharts();
     }catch(e){
-      console.warn('PEvo sync error:',e);
-      // Bei jedem Netzwerk-/Odoo-Fehler: statischen Fallback zeigen wenn DB leer,
-      // sonst Charts aus vorhandenen DB-Daten anzeigen + Fehlermeldung im Status
+      console.warn('PEvo delta-sync error:',e);
       let dbEmpty=true;
       try{dbEmpty=(await countAllEvents())===0;}catch(_){}
       if(dbEmpty){
-        showStaticFallback();
-        // Hinweis ergänzen dass Sync fehlschlug
+        showEmptyState();
         const el=document.getElementById('evo-status');
         if(el) el.innerHTML+=' &nbsp;<span style="color:var(--elmi-red)">&#9888; Sync fehlgeschlagen: '+e.message+'</span>';
       } else {
-        setStatus('⚠ Sync fehlgeschlagen ('+e.message+') — zeige bestehende lokale Daten');
+        setStatus('&#9888; Sync fehlgeschlagen ('+e.message+') &mdash; zeige bestehende lokale Daten');
         await refreshCharts();
       }
     }finally{
@@ -3119,16 +3218,19 @@ const PEvo=(function(){
 
   function showEmptyState(){
     document.getElementById('evo-charts-area').innerHTML=
-      '<div style="text-align:center;padding:56px 24px;background:var(--bg1);'
-      +'border:1px solid var(--bd1);border-radius:var(--r-md);box-shadow:var(--sh1)">'
-      +'<div style="font-size:36px;margin-bottom:12px">📊</div>'
-      +'<div style="font-size:15px;font-weight:700;margin-bottom:6px">Keine Daten vorhanden</div>'
-      +'<div style="font-size:12px;color:var(--fg2);margin-bottom:20px">'
-      +'Klicke „Von Odoo neu laden" um Stage-Historie aus Odoo zu importieren.</div>'
-      +'<button class="btn primary" onclick="PEvo.syncFromOdoo()">'
-      +'<i data-lucide="cloud-download" size="13"></i> Von Odoo neu laden</button>'
+      '<div style="text-align:center;padding:48px 24px;background:var(--bg1);'
+      +'border:2px dashed var(--bd2);border-radius:var(--r-md)">'
+      +'<div style="font-size:32px;margin-bottom:12px">📊</div>'
+      +'<div style="font-size:15px;font-weight:700;margin-bottom:6px">Keine historischen Daten vorhanden</div>'
+      +'<div style="font-size:12px;color:var(--fg2);margin-bottom:3px">'
+      +'Schritt 1: <strong>stage_history.json</strong> importieren</div>'
+      +'<div style="font-size:11px;color:var(--fg3);margin-bottom:20px">'
+      +'(einmaliger Import der vollen Odoo-Historie)</div>'
+      +'<button class="btn primary" onclick="document.getElementById(\'evo-json-input\').click()">'
+      +'📂&nbsp; stage_history.json auswählen</button>'
+      +'<div style="font-size:11px;color:var(--fg3);margin-top:14px;line-height:1.7">'
+      +'Nach dem Import: nur neue Daten werden per<br>„Von Odoo neu laden" aktuell gehalten.</div>'
       +'</div>';
-    lucide.createIcons();
   }
 
   function showSyncError(msg){
@@ -3233,7 +3335,10 @@ const PEvo=(function(){
         .forEach(r=>rs.add(new Option(r,r)));
     }
     try{ await refreshStatusLine(); } catch(_){}
+    // First render from DB (instant), then auto-sync in background if data exists
     await refreshCharts();
+    const lastSync=await dbGet('meta','last_sync').catch(()=>null);
+    if(lastSync) doSync(); // silent auto-sync, updates charts when done
   }
 
   return{
@@ -3242,11 +3347,14 @@ const PEvo=(function(){
     refreshCharts,
     syncFromOdoo:async()=>{
       const lastSync=await dbGet('meta','last_sync').catch(()=>null);
-      const msg=lastSync
-        ?`Inkrementeller Sync: Es werden nur neue Stage-Ereignisse seit ${new Date(lastSync).toLocaleString('de-DE')} geladen.\nHistorische Daten in der lokalen DB bleiben erhalten.\n\nFortfahren?`
-        :'Erster Sync: Es wird die vollständige Stage-Historie der letzten 3 Jahre aus Odoo geladen.\nDieser Vorgang dauert ca. 15–60 Sekunden.\n\nFortfahren?';
-      if(confirm(msg)) doSync();
-    }
+      if(!lastSync){
+        alert('Kein Import-Datum gefunden — bitte zuerst stage_history.json importieren.\n\nKlicke auf „📂 JSON neu importieren" um die historischen Daten einzulesen.');
+        return;
+      }
+      const ts=new Date(lastSync).toLocaleString('de-DE');
+      if(confirm(`Delta-Sync: Es werden nur neue Stage-Ereignisse seit ${ts} geladen.\nHistorische Daten in der lokalen DB bleiben erhalten.\n\nFortfahren?`)) doSync();
+    },
+    handleJSONFile(file){if(file) importJSON(file);}
   };
 })();
 </script>
