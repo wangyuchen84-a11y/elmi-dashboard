@@ -939,25 +939,25 @@ canvas.clickable{cursor:pointer}
           <div class="sc-saved" id="sc-saved-hint"></div>
         </div>
 
-        <!-- Right: Ist-Daten aus Odoo -->
+        <!-- Right: Historische Funnel-Analyse -->
         <div class="card">
-          <div class="card-t">Ist-Daten aus Odoo <span>aktiv geladene Deals</span></div>
+          <div class="card-t">Historische Funnel-Analyse <span id="sc-ist-subtitle">aus IndexedDB</span></div>
           <div class="sc-table-wrap">
             <table>
               <thead><tr>
                 <th>Stage</th>
-                <th class="r">Deals</th>
-                <th class="r">Ø Wahrsch.</th>
-                <th class="r">Median Prob.</th>
-                <th class="r">Ø Ist-Dauer</th>
+                <th class="r">Eintritte</th>
+                <th class="r">→ Nächste</th>
+                <th class="r">Conversion</th>
+                <th class="r">Ø Dauer</th>
                 <th class="r">Median Dauer</th>
               </tr></thead>
               <tbody id="sc-ist-body"></tbody>
             </table>
           </div>
           <div style="margin-top:10px;font-size:11px;color:var(--fg3);line-height:1.5">
-            Ist-Daten basieren auf aktiv geladenen Odoo-Deals.<br>
-            Datum Stage-&#196;nderung = <code style="font-size:10px;background:var(--bg3);padding:1px 4px;border-radius:4px">date_last_stage_update</code> (nicht im aktuellen Export enthalten → Ist-Dauer %).
+            Basiert auf historischen Stage-Ereignissen aus der lokalen IndexedDB (Pipeline Evolution).<br>
+            <strong>Eintritte</strong> = Unique Deals die diese Stage je betreten haben &middot; <strong>Conversion</strong> = Anteil davon der die nächste Stage erreicht hat &middot; <strong>Dauer</strong> = Tage bis zur nächsten Stage.
           </div>
         </div>
 
@@ -1118,25 +1118,102 @@ function resetStageConfig(){
   localStorage.removeItem('elmi_stage_config_ts');
   window.location.reload();
 }
-function renderStageIstData(){
-  const stages=[{key:'S0',num:0},{key:'S1',num:1},{key:'S2',num:2},{key:'S3',num:3},{key:'S4',num:4}];
-  document.getElementById('sc-ist-body').innerHTML=stages.map(s=>{
-    const deals=ALL_LEADS.filter(d=>stageNum(d.stage)===s.num);
-    if(!deals.length)return`<tr><td><span class="chip ${s.key.toLowerCase()}">${s.key}</span></td><td class="r">0</td><td class="r">—</td><td class="r">—</td><td class="r" style="color:var(--fg3)">n/a</td><td class="r" style="color:var(--fg3)">n/a</td></tr>`;
-    const probs=deals.map(d=>d.prob).filter(p=>p>0);
-    const avgP=probs.length?probs.reduce((a,b)=>a+b,0)/probs.length:0;
-    const sp=[...probs].sort((a,b)=>a-b);
-    const medP=sp.length?sp.length%2===0?(sp[sp.length/2-1]+sp[sp.length/2])/2:sp[Math.floor(sp.length/2)]:0;
-    const pc=avgP>=60?'color:var(--success)':avgP>=30?'color:var(--warn)':'color:var(--elmi-red)';
-    return`<tr>
-      <td><span class="chip ${s.key.toLowerCase()}">${s.key}</span></td>
-      <td class="r">${deals.length}</td>
-      <td class="r" style="font-family:var(--mono);${pc}">${avgP.toFixed(1)}%</td>
-      <td class="r" style="font-family:var(--mono)">${medP.toFixed(1)}%</td>
-      <td class="r" style="color:var(--fg3)">n/a</td>
-      <td class="r" style="color:var(--fg3)">n/a</td>
-    </tr>`;
-  }).join('');
+async function computeHistoricalStageStats(){
+  // Liest alle stage_events aus der IndexedDB (elmi_evo_db)
+  const events = await new Promise((res,rej)=>{
+    const req=indexedDB.open('elmi_evo_db',2);
+    req.onerror=()=>rej(req.error);
+    req.onsuccess=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains('stage_events')){db.close();res(null);return;}
+      const tx=db.transaction('stage_events','readonly');
+      const all=tx.objectStore('stage_events').getAll();
+      all.onsuccess=()=>{db.close();res(all.result);};
+      all.onerror=()=>{db.close();rej(all.error);};
+    };
+  });
+  if(!events||!events.length) return null;
+
+  // Gruppieren nach Deal, sortieren nach Datum
+  const byDeal={};
+  for(const ev of events){
+    if(!ev.dealId||!ev.stageKey) continue;
+    if(!byDeal[ev.dealId]) byDeal[ev.dealId]=[];
+    byDeal[ev.dealId].push(ev);
+  }
+
+  const nextOf={S0:'S1',S1:'S2',S2:'S3',S3:'S4',S4:'S5'};
+  const stats={};
+  for(const sk of ['S0','S1','S2','S3','S4'])
+    stats[sk]={entries:0,conversions:0,durations:[]};
+
+  for(const evs of Object.values(byDeal)){
+    evs.sort((a,b)=>new Date(a.date)-new Date(b.date));
+    // Erster Eintritt pro Stage merken
+    const firstEntry={};
+    for(const ev of evs){
+      const sk=ev.stageKey;
+      if(sk&&!(sk in firstEntry)){
+        firstEntry[sk]=ev.date instanceof Date?ev.date:new Date(ev.date);
+        if(stats[sk]) stats[sk].entries++;
+      }
+    }
+    // Conversion & Dauer berechnen
+    for(const sk of ['S0','S1','S2','S3','S4']){
+      if(!(sk in firstEntry)) continue;
+      const next=nextOf[sk];
+      if(next in firstEntry){
+        stats[sk].conversions++;
+        const days=(firstEntry[next]-firstEntry[sk])/(1000*60*60*24);
+        if(days>=0) stats[sk].durations.push(days);
+      }
+    }
+  }
+  return{stats,totalDeals:Object.keys(byDeal).length,totalEvents:events.length};
+}
+
+async function renderStageIstData(){
+  const tbody=document.getElementById('sc-ist-body');
+  tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--fg3);padding:20px 0">Lade historische Daten…</td></tr>';
+  try{
+    const result=await computeHistoricalStageStats();
+    if(!result){
+      const sub=document.getElementById('sc-ist-subtitle');
+      if(sub) sub.textContent='keine Daten';
+      tbody.innerHTML=`<tr><td colspan="6" style="padding:20px;text-align:center">
+        <span style="color:var(--fg3)">Keine historischen Daten vorhanden —</span>
+        <a style="cursor:pointer;color:var(--elmi-red);margin-left:4px"
+           onclick="showPage('pipeline-evo',document.getElementById('nav-pipeline-evo'));PEvo.init()">
+          stage_history.json importieren →
+        </a></td></tr>`;
+      return;
+    }
+    const {stats,totalDeals,totalEvents}=result;
+    const sub=document.getElementById('sc-ist-subtitle');
+    if(sub) sub.textContent=`${totalDeals.toLocaleString('de')} Deals · ${totalEvents.toLocaleString('de')} Ereignisse`;
+
+    const stageLabels={S0:'Unqualifiziert',S1:'Erstgespräch',S2:'Solution Fit',S3:'Angebot',S4:'Commitment'};
+    const nextLabel={S0:'S1',S1:'S2',S2:'S3',S3:'S4',S4:'Won'};
+
+    tbody.innerHTML=['S0','S1','S2','S3','S4'].map(sk=>{
+      const s=stats[sk];
+      const pct=s.entries>0?(s.conversions/s.entries*100):0;
+      const avg=s.durations.length?s.durations.reduce((a,b)=>a+b,0)/s.durations.length:null;
+      const sd=[...s.durations].sort((a,b)=>a-b);
+      const med=sd.length?(sd.length%2===0?(sd[sd.length/2-1]+sd[sd.length/2])/2:sd[Math.floor(sd.length/2)]):null;
+      const pctCol=pct>=50?'var(--success)':pct>=25?'var(--warn)':'var(--elmi-red)';
+      return`<tr>
+        <td><span class="chip ${sk.toLowerCase()}">${sk}</span><div style="font-size:10px;color:var(--fg3);margin-top:2px">${stageLabels[sk]}</div></td>
+        <td class="r" style="font-family:var(--mono)">${s.entries}</td>
+        <td class="r" style="font-family:var(--mono)">${s.conversions} <span style="font-size:10px;color:var(--fg3)">→${nextLabel[sk]}</span></td>
+        <td class="r"><span style="font-family:var(--mono);font-weight:600;color:${pctCol}">${s.entries>0?pct.toFixed(1)+'%':'—'}</span></td>
+        <td class="r" style="font-family:var(--mono)">${avg!=null?Math.round(avg)+' T':'—'}</td>
+        <td class="r" style="font-family:var(--mono)">${med!=null?Math.round(med)+' T':'—'}</td>
+      </tr>`;
+    }).join('');
+  }catch(e){
+    tbody.innerHTML=`<tr><td colspan="6" style="color:var(--elmi-red);padding:12px">Fehler: ${e.message}</td></tr>`;
+  }
 }
 
 const PAGE_T={executive:'Executive Summary',pipeline:'Pipeline & Funnel',kunden:'Kundengruppen & Sales Reps',forecast:'Forecast & Historie',performance:'Performance — Interaktionen',leads:'Lead Intelligence','pipeline-evo':'📈 Pipeline Evolution',stageconfig:'⚙ Stage Config'};
