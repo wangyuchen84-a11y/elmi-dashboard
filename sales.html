@@ -310,6 +310,10 @@ canvas.clickable{cursor:pointer}
   font-size:12px;color:var(--info);margin-bottom:14px}
 .sc-info-banner a{color:var(--info);font-weight:600;text-decoration:underline;cursor:pointer}
 
+/* PIPELINE EVOLUTION */
+@keyframes evo-spin{to{transform:rotate(360deg)}}
+.evo-spinner{width:22px;height:22px;border:2px solid var(--bd2);border-top-color:var(--elmi-red);border-radius:50%;animation:evo-spin .75s linear infinite;flex-shrink:0}
+
 </style>
 </head>
 <body>
@@ -360,6 +364,7 @@ canvas.clickable{cursor:pointer}
     <button class="nav-item" onclick="showPage('forecast',this)"><i data-lucide="trending-up" size="16"></i> Forecast &amp; Historie</button>
     <button class="nav-item" id="nav-performance" onclick="showPage('performance',this);setTimeout(P5.apply.bind(P5),80)"><i data-lucide="activity" size="16"></i> Performance</button>
     <button class="nav-item" id="nav-leads" onclick="showPage('leads',this);setTimeout(LI.init.bind(LI),80)"><i data-lucide="search" size="16"></i> Lead Intelligence</button>
+    <button class="nav-item" id="nav-pipeline-evo" onclick="showPage('pipeline-evo',this);PEvo.init()"><i data-lucide="line-chart" size="16"></i> Pipeline Evolution</button>
     <button class="nav-item" id="nav-stageconfig" onclick="showPage('stageconfig',this);renderStageConfigPage()"><i data-lucide="settings-2" size="16"></i> Stage Config</button>
   </div>
   <div class="s-sec">
@@ -825,6 +830,70 @@ canvas.clickable{cursor:pointer}
       </div>
     </div>
 
+    <!-- PAGE: PIPELINE EVOLUTION -->
+    <div id="pipeline-evo" class="page">
+      <div class="page-hdr" style="margin-bottom:14px">
+        <span class="eyebrow" style="margin-bottom:0">Pipeline Evolution &mdash; Stage-Entwicklung &#252;ber Zeit</span>
+      </div>
+      <!-- Filter bar -->
+      <div class="filter-bar" style="grid-template-columns:200px 200px 1fr;margin-bottom:16px">
+        <div class="filter-group">
+          <label class="filter-label">Kundengruppe</label>
+          <select class="filter-sel" id="evo-f-group" onchange="PEvo.applyFilter()">
+            <option value="">Alle Gruppen</option>
+            <option value="CPO">CPO</option>
+            <option value="Utility">Utility / Stadtwerke</option>
+            <option value="Logistik">Logistik / Fleet</option>
+            <option value="Wholesale">Wholesale</option>
+            <option value="EPC">EPC</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Sales Rep</label>
+          <select class="filter-sel" id="evo-f-rep" onchange="PEvo.applyFilter()">
+            <option value="">Alle Reps</option>
+          </select>
+        </div>
+        <div class="filter-group" style="justify-content:flex-end;flex-direction:row;align-items:flex-end;gap:8px">
+          <button class="reset-btn active" onclick="document.getElementById('evo-f-group').value='';document.getElementById('evo-f-rep').value='';PEvo.applyFilter()">
+            <i data-lucide="rotate-ccw" size="11"></i> Reset
+          </button>
+          <button class="btn ghost" onclick="PEvo.retry()"><i data-lucide="refresh-cw" size="11"></i> Neu laden</button>
+        </div>
+      </div>
+      <!-- KPI row -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+        <div class="kpi">
+          <span class="kpi-ey">Stage-Wechsel gesamt</span>
+          <span class="kpi-v" id="evo-kpi-changes">—</span>
+          <div class="kpi-c">Letzte 12 Monate</div>
+        </div>
+        <div class="kpi">
+          <span class="kpi-ey">Aktivster Monat</span>
+          <span class="kpi-v" style="font-size:18px;letter-spacing:-.5px" id="evo-kpi-busiest">—</span>
+          <div class="kpi-c">Meiste Stage-Bewegung</div>
+        </div>
+        <div class="kpi">
+          <span class="kpi-ey">Tracking-Abdeckung</span>
+          <span class="kpi-v" style="font-size:20px" id="evo-kpi-coverage">—</span>
+          <div class="kpi-c">Deals mit Tracking-Eintr&#228;gen</div>
+        </div>
+      </div>
+      <!-- Dynamic chart area (filled by PEvo.init) -->
+      <div id="evo-charts-area" style="margin-bottom:14px"></div>
+      <!-- Method note -->
+      <div style="background:var(--bg2);border:1px solid var(--bd1);border-radius:var(--r-md);padding:12px 16px;font-size:11px;color:var(--fg3);line-height:1.8">
+        <i data-lucide="info" size="12" style="vertical-align:-2px;margin-right:5px;color:var(--info)"></i>
+        <strong style="color:var(--fg2)">Datenquelle:</strong>
+        Odoo <code style="font-size:10px;background:var(--bg3);padding:1px 4px;border-radius:4px">mail.tracking.value</code> (Stage-&#196;nderungs-Log).
+        Jeder Balken zeigt den rekonstruierten Stand aller aktiven Deals am letzten Tag des Monats.
+        Deals ohne Tracking-Eintrag im 12-Monats-Fenster werden mit ihrer aktuellen Stage f&#252;r alle Snapshots eingetragen.
+        Zeitfenster: letzte 12 Monate &middot; Nur aktive Deals (Stage 0&ndash;4).
+        CORS-Hinweis: Die Odoo-API muss Cross-Origin-Anfragen von dieser Domain erlauben.
+      </div>
+    </div>
+
     <!-- PAGE: STAGE CONFIG -->
     <div id="stageconfig" class="page">
       <div class="page-hdr" style="margin-bottom:16px">
@@ -1035,7 +1104,7 @@ function renderStageIstData(){
   }).join('');
 }
 
-const PAGE_T={executive:'Executive Summary',pipeline:'Pipeline & Funnel',kunden:'Kundengruppen & Sales Reps',forecast:'Forecast & Historie',performance:'Performance — Interaktionen',stageconfig:'⚙ Stage Config',leads:'Lead Intelligence'};
+const PAGE_T={executive:'Executive Summary',pipeline:'Pipeline & Funnel',kunden:'Kundengruppen & Sales Reps',forecast:'Forecast & Historie',performance:'Performance — Interaktionen',leads:'Lead Intelligence','pipeline-evo':'📈 Pipeline Evolution',stageconfig:'⚙ Stage Config'};
 function showPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -2685,6 +2754,267 @@ function openLeadDetailModal(id) {
   document.getElementById('odoo-modal-bg').classList.add('open');
   lucide.createIcons();
 }
+
+// ── Pipeline Evolution ────────────────────────────────────────────────────────
+const PEvo=(function(){
+  const SK=['S0','S1','S2','S3','S4'];
+  const SC=[C.muted,C.orange,C.warn,C.tang,C.success];
+  const SL=['S0 Unqualifiziert','S1 Erstgespräch','S2 Solution Fit','S3 Angebot','S4 Commitment'];
+  let _cache=null,_loading=false,_charts=[];
+  let _rid=0;
+
+  // ── Odoo JSON-RPC ──────────────────────────────────────────────────────────
+  async function odoo(model,method,domain,fields){
+    const r=await fetch(ODOO_BASE+'/web/dataset/call_kw',{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({jsonrpc:'2.0',method:'call',id:++_rid,
+        params:{model,method,args:[domain],kwargs:{fields,limit:0}}})
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    if(j.error) throw new Error(j.error.data?.message||JSON.stringify(j.error));
+    return j.result;
+  }
+
+  // ── Fetch mail.message + mail.tracking.value with field_desc fallback ──────
+  async function fetchTracking(){
+    const cutoff=new Date(); cutoff.setMonth(cutoff.getMonth()-12);
+    const cs=cutoff.toISOString().slice(0,10);
+    const msgs=await odoo('mail.message','search_read',
+      [['model','=','crm.lead'],['date','>=',cs],['tracking_value_ids','!=',false]],
+      ['id','date','res_id']);
+    if(!msgs.length) return{msgs:[],tvs:[]};
+    const ids=msgs.map(m=>m.id);
+    const BATCH=500;
+    async function batchTV(flt){
+      const ps=[];
+      for(let i=0;i<ids.length;i+=BATCH){
+        const sl=ids.slice(i,i+BATCH);
+        const dom=flt
+          ?[['mail_message_id','in',sl],['field_desc','=',flt]]
+          :[['mail_message_id','in',sl]];
+        ps.push(odoo('mail.tracking.value','search_read',dom,
+          ['id','mail_message_id','old_value_char','new_value_char','field_desc']));
+      }
+      return(await Promise.all(ps)).flat();
+    }
+    let tvs=await batchTV('Stage');
+    if(!tvs.length) tvs=await batchTV('Stufe');
+    if(!tvs.length){
+      tvs=await batchTV(null);
+      tvs=tvs.filter(t=>{const f=(t.field_desc||'').toLowerCase();return f.includes('stage')||f.includes('stufe');});
+    }
+    return{msgs,tvs};
+  }
+
+  // ── Build deal→[{date,to,from}] timelines ─────────────────────────────────
+  function buildTimelines(msgs,tvs){
+    const mm=new Map(msgs.map(m=>[m.id,m]));
+    const tm=new Map();
+    for(const t of tvs){
+      const mid=Array.isArray(t.mail_message_id)?t.mail_message_id[0]:t.mail_message_id;
+      if(!tm.has(mid)) tm.set(mid,t);
+    }
+    const tl=new Map();
+    for(const[mid,msg]of mm){
+      const t=tm.get(mid);
+      if(!t) continue;
+      if(!tl.has(msg.res_id)) tl.set(msg.res_id,[]);
+      tl.get(msg.res_id).push({
+        date:new Date(msg.date.replace(' ','T')),
+        to:t.new_value_char,
+        from:t.old_value_char
+      });
+    }
+    for(const[,e]of tl) e.sort((a,b)=>a.date-b.date);
+    return tl;
+  }
+
+  // ── 12 month-end snapshot points ──────────────────────────────────────────
+  function mkPoints(){
+    const pts=[],t=new Date();
+    for(let i=11;i>=0;i--){
+      const d=new Date(t.getFullYear(),t.getMonth()-i,1);
+      pts.push({
+        label:d.toLocaleDateString('de-DE',{month:'short',year:'numeric'}),
+        date:new Date(d.getFullYear(),d.getMonth()+1,0,23,59,59),
+        key:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')
+      });
+    }
+    return pts;
+  }
+
+  // ── Stage key from stage name string ──────────────────────────────────────
+  function skOf(s){const n=stageNum(s);return(n>=0&&n<=4)?'S'+n:null;}
+
+  // ── Stage name a deal was in at a snapshot date ───────────────────────────
+  function stageAt(id,date,tl){
+    const e=tl.get(id)||[];
+    let s=null;
+    for(const ev of e){if(ev.date<=date) s=ev.to; else break;}
+    if(s) return s;
+    const d=ALL_LEADS.find(x=>x.id===id);
+    return d?d.stage:null;
+  }
+
+  // ── Count + volume per stage per month ────────────────────────────────────
+  function calcData(pts,tl,deals){
+    const cnt=Object.fromEntries(SK.map(k=>[k,new Array(pts.length).fill(0)]));
+    const vol=Object.fromEntries(SK.map(k=>[k,new Array(pts.length).fill(0)]));
+    pts.forEach((pt,i)=>{
+      for(const d of deals){
+        const sk=skOf(stageAt(d.id,pt.date,tl));
+        if(!sk) continue;
+        cnt[sk][i]++;
+        vol[sk][i]+=d.revenue||0;
+      }
+    });
+    return{cnt,vol};
+  }
+
+  const fmtV=v=>v>=1e6?(v/1e6).toFixed(1)+' Mio':v>=1000?Math.round(v/1000)+'K':v;
+
+  // ── Render both stacked bar charts ────────────────────────────────────────
+  function renderCharts(pts,tl,deals){
+    _charts.forEach(c=>{try{c.destroy();}catch(_){}});
+    _charts=[];
+    const{cnt,vol}=calcData(pts,tl,deals);
+    const labels=pts.map(p=>p.label);
+    const mkDS=src=>SK.map((k,i)=>({label:SL[i],data:src[k],
+      backgroundColor:SC[i],borderRadius:3,borderSkipped:false,stack:'a'}));
+    const stk={
+      x:{...BASE.scales.x,stacked:true},
+      y:{...BASE.scales.y,stacked:true}
+    };
+    const c1=document.getElementById('evo-c1');
+    const c2=document.getElementById('evo-c2');
+    if(!c1||!c2) return;
+    _charts.push(new Chart(c1,{type:'bar',
+      data:{labels,datasets:mkDS(cnt)},
+      options:{...BASE,interaction:{mode:'index',intersect:false},
+        plugins:{...BASE.plugins,
+          legend:{...BASE.plugins.legend,position:'top'},
+          tooltip:{callbacks:{
+            footer:its=>'Gesamt: '+its.reduce((s,x)=>s+x.parsed.y,0)+' Deals'}}},
+        scales:{...stk,y:{...stk.y,
+          ticks:{...BASE.scales.y.ticks,precision:0,stepSize:5}}}}}));
+    _charts.push(new Chart(c2,{type:'bar',
+      data:{labels,datasets:mkDS(vol)},
+      options:{...BASE,interaction:{mode:'index',intersect:false},
+        plugins:{...BASE.plugins,
+          legend:{display:false},
+          tooltip:{callbacks:{
+            label:it=>SL[it.datasetIndex]+': '+fmtV(it.parsed.y),
+            footer:its=>'Gesamt: '+fmtV(its.reduce((s,x)=>s+x.parsed.y,0))}}},
+        scales:{...stk,y:{...stk.y,
+          ticks:{...BASE.scales.y.ticks,callback:fmtV}}}}}));
+  }
+
+  // ── KPI cards ─────────────────────────────────────────────────────────────
+  function updateKPIs(tl,pts){
+    const mc=new Array(pts.length).fill(0);
+    let tot=0;
+    for(const[,e]of tl){
+      tot+=e.length;
+      e.forEach(ev=>{
+        const i=pts.findIndex(p=>p.key===ev.date.toISOString().slice(0,7));
+        if(i>=0) mc[i]++;
+      });
+    }
+    const mx=Math.max(...mc,0),mxi=mc.indexOf(mx);
+    const ai=ALL_LEADS.filter(d=>{const n=stageNum(d.stage);return n>=0&&n<=4;});
+    document.getElementById('evo-kpi-changes').textContent=tot;
+    document.getElementById('evo-kpi-busiest').textContent=
+      mxi>=0&&mx>0?pts[mxi].label+' · '+mx+' Wechsel':'—';
+    document.getElementById('evo-kpi-coverage').textContent=
+      ai.filter(d=>tl.has(d.id)).length+' / '+ai.length+' Deals';
+  }
+
+  // ── DOM helpers ───────────────────────────────────────────────────────────
+  function showSpinner(){
+    document.getElementById('evo-charts-area').innerHTML=
+      '<div style="display:flex;align-items:center;justify-content:center;height:300px;gap:14px;color:var(--fg2)">'
+      +'<div class="evo-spinner"></div>'
+      +'<span style="font-size:13px">Lade Stage-Tracking-Daten aus Odoo&hellip;</span></div>';
+  }
+
+  function buildDOM(){
+    document.getElementById('evo-charts-area').innerHTML=
+      '<div class="cgrid" style="margin-bottom:0">'
+      +'<div class="card"><div class="card-t">Anzahl aktiver Deals nach Stage'
+      +' <span>Monatsende-Snapshot</span></div>'
+      +'<div style="height:260px"><canvas id="evo-c1"></canvas></div></div>'
+      +'<div class="card"><div class="card-t">Pipeline-Volumen nach Stage &mdash; Brutto'
+      +' <span>EUR</span></div>'
+      +'<div style="height:260px"><canvas id="evo-c2"></canvas></div></div>'
+      +'</div>';
+  }
+
+  function showError(msg){
+    document.getElementById('evo-charts-area').innerHTML=
+      '<div style="background:rgba(227,32,40,.06);border:1px solid rgba(227,32,40,.2);'
+      +'border-radius:10px;padding:20px 24px">'
+      +'<div style="font-weight:700;margin-bottom:6px;color:var(--elmi-red)">'
+      +'&#9888; Fehler beim Laden der Tracking-Daten</div>'
+      +'<div style="font-size:12px;color:var(--fg2);margin-bottom:8px">'+msg+'</div>'
+      +'<div style="font-size:11px;color:var(--fg3);margin-bottom:12px">'
+      +'M&#246;gliche Ursache: CORS-Einschr&#228;nkung oder fehlende Odoo-Session. '
+      +'Stelle sicher, dass du im gleichen Browser in Odoo eingeloggt bist und '
+      +'CORS f&#252;r diese Domain konfiguriert ist.</div>'
+      +'<button class="btn ghost" onclick="PEvo.retry()">'
+      +'<i data-lucide="refresh-cw" size="12"></i> Erneut versuchen</button>'
+      +'</div>';
+    lucide.createIcons();
+  }
+
+  // ── Apply group/rep filter ────────────────────────────────────────────────
+  function applyFilter(){
+    if(!_cache) return;
+    const g=document.getElementById('evo-f-group').value;
+    const r=document.getElementById('evo-f-rep').value;
+    const deals=ALL_LEADS.filter(d=>{
+      const n=stageNum(d.stage);
+      if(n<0||n>4) return false;
+      if(g&&d.group!==g) return false;
+      if(r&&d.rep!==r) return false;
+      return true;
+    });
+    renderCharts(_cache.pts,_cache.tl,deals);
+  }
+
+  // ── Public init ───────────────────────────────────────────────────────────
+  async function init(){
+    if(_cache){applyFilter();return;}
+    if(_loading) return;
+    _loading=true;
+    showSpinner();
+    try{
+      const{msgs,tvs}=await fetchTracking();
+      const tl=buildTimelines(msgs,tvs);
+      const pts=mkPoints();
+      _cache={tl,pts};
+      // populate rep select once
+      const rs=document.getElementById('evo-f-rep');
+      if(rs&&rs.options.length<=1){
+        [...new Set(ALL_LEADS
+          .filter(d=>{const n=stageNum(d.stage);return n>=0&&n<=4;})
+          .map(d=>d.rep).filter(Boolean))].sort()
+          .forEach(r=>{rs.add(new Option(r,r));});
+      }
+      buildDOM();
+      updateKPIs(tl,pts);
+      const deals=ALL_LEADS.filter(d=>{const n=stageNum(d.stage);return n>=0&&n<=4;});
+      renderCharts(pts,tl,deals);
+    }catch(e){
+      showError(e.message);
+    }finally{
+      _loading=false;
+    }
+  }
+
+  return{init,applyFilter,retry:()=>{_cache=null;init();}};
+})();
 </script>
 
 <div class="odoo-modal-bg" id="odoo-modal-bg" onclick="if(event.target===this)closeOdooModal()">
