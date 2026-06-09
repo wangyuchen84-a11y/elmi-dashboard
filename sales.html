@@ -422,7 +422,7 @@ canvas.clickable{cursor:pointer}
         <div class="kpi strip" style="cursor:pointer" onclick="openDrawer('all','prob')">
           <span class="kpi-ey">Gewichtet</span>
           <span class="kpi-v" style="color:var(--elmi-red)" id="dyn-exec-weighted">1,017<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
-          <div class="kpi-c">&#8594; sortiert nach Wahrsch.</div>
+          <div class="kpi-c" id="dyn-exec-weighted-c">&#8594; sortiert nach Wahrsch.</div>
         </div>
         <div class="kpi" style="cursor:pointer" onclick="openYTDModal()">
           <span class="kpi-ey">Umsatz YTD 2026</span><span class="kpi-v" id="kpi-ytd">566 K</span>
@@ -2400,15 +2400,16 @@ function renderDashboardKPIs(){
   // Stage 3 — Anzahl + Betrag als Subtext
   const s3list=ALL_LEADS.filter(d=>stageNum(d.stage)===3);
   const s3rev=s3list.reduce((s,d)=>s+(d.revenue||0),0);
-  ge('kpi-stage3').textContent=s3list.length;
-  ge('kpi-stage3-c').innerHTML='<i data-lucide="file-search" size="11"></i> '+fmtKpiV(s3rev).replace(/<[^>]+>/g,'')+'  Volumen &#8594;';
+  ge('kpi-stage3').innerHTML=fmtKpiV(s3rev);
+  ge('kpi-stage3-c').innerHTML='<i data-lucide="file-search" size="11"></i> '+s3list.length+' Deals &#8594;';
 
   // Closed Lost (Stage X)
   const lostList=ALL_LEADS.filter(d=>/stage\s*x|closed.?lost/i.test(d.stage||''));
   const lostRev=lostList.reduce((s,d)=>s+(d.revenue||0),0);
-  ge('kpi-lost').textContent=lostList.length;
-  ge('kpi-lost-c').innerHTML='<i data-lucide="x-circle" size="11"></i> '+lostList.length+' Deals'+(lostRev>0?' · '+fmtKpiV(lostRev).replace(/<[^>]+>/g,'')+' Volumen':'')+'  &#8594;';
+  ge('kpi-lost').innerHTML=lostRev>0?fmtKpiV(lostRev):'<span style="font-size:18px">'+lostList.length+'</span>';
+  ge('kpi-lost-c').innerHTML='<i data-lucide="x-circle" size="11"></i> '+lostList.length+' Deals &#8594;';
   ge('dyn-exec-weighted').innerHTML=fmtKpiV(weighted);
+  ge('dyn-exec-weighted-c').innerHTML=deals+' Deals &middot; sortiert nach Wahrsch. &#8594;';
 
   // Sales Rep KPI cards — dynamisch aus ALL_LEADS
   const repColors=['var(--elmi-red)','var(--elmi-tang)','var(--elmi-purple)','var(--success)','#2563EB','#0891B2','#7C3AED','#059669','#D97706'];
