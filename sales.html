@@ -3574,8 +3574,8 @@ const PEvo=(function(){
       }
       const pts=mkPoints();
       buildChartDOM();
-      const{cnt,vol}=buildSnapshots(events,getDeals(),pts);
-      renderCharts(cnt,vol,pts);
+      const{cnt,vol,dealsByMonth}=buildSnapshots(events,getDeals(),pts);
+      renderCharts(cnt,vol,pts,dealsByMonth);
       updateKPIs(events,pts);
     }catch(e){
       if(e.name==='InvalidStateError'||!window.indexedDB){
@@ -3594,8 +3594,8 @@ const PEvo=(function(){
     if(!_eventsCache) return;
     const pts=mkPoints();
     buildChartDOM();
-    const{cnt,vol}=buildSnapshots(_eventsCache,getDeals(),pts);
-    renderCharts(cnt,vol,pts);
+    const{cnt,vol,dealsByMonth}=buildSnapshots(_eventsCache,getDeals(),pts);
+    renderCharts(cnt,vol,pts,dealsByMonth);
     updateKPIs(_eventsCache,pts);
   }
 
