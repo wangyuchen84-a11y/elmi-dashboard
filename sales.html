@@ -395,13 +395,13 @@ canvas.clickable{cursor:pointer}
     <div id="executive" class="page active">
       <div class="sc-info-banner"><i data-lucide="settings-2" size="13"></i> Berechnungen basieren auf Stage-Konfiguration &middot; <a onclick="showPage('stageconfig',document.getElementById('nav-stageconfig'));renderStageConfigPage()">Konfiguration ansehen</a></div>
       <div class="goal">
-        <div class="goal-hdr"><span class="goal-t">&#9889; Fundraising-Ziel &mdash; 10 Mio. EUR Order Volume</span><span class="goal-pct">10,17% gewichtet</span></div>
-        <div class="goal-track"><div class="goal-fill" style="width:10.17%"></div></div>
+        <div class="goal-hdr"><span class="goal-t">&#9889; Fundraising-Ziel &mdash; 10 Mio. EUR Order Volume</span><span class="goal-pct" id="dyn-goal-pct">10,17% gewichtet</span></div>
+        <div class="goal-track"><div class="goal-fill" id="dyn-goal-fill" style="width:10.17%"></div></div>
         <div class="goal-meta">
-          <div class="goal-stat">Gewichtete Pipeline <strong>1,017 Mio. EUR</strong></div>
-          <div class="goal-stat">Brutto-Pipeline <strong>32,85 Mio. EUR</strong></div>
+          <div class="goal-stat" id="dyn-goal-stat-w">Gewichtete Pipeline <strong>1,017 Mio. EUR</strong></div>
+          <div class="goal-stat">Brutto-Pipeline <strong id="dyn-goal-brutto">32,85 Mio. EUR</strong></div>
           <div class="goal-stat">Umsatz YTD <strong>566 K EUR</strong></div>
-          <div class="goal-stat">Aktive Deals <strong>327</strong></div>
+          <div class="goal-stat">Aktive Deals <strong id="dyn-goal-deals">327</strong></div>
         </div>
       </div>
       <div class="page-hdr">
@@ -411,12 +411,12 @@ canvas.clickable{cursor:pointer}
       <div class="kpi-grid">
         <div class="kpi strip" style="cursor:pointer" onclick="openDrawer('all')">
           <span class="kpi-ey">Brutto-Pipeline</span>
-          <span class="kpi-v gt">32,85<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
-          <div class="kpi-c"><i data-lucide="euro" size="11"></i> Alle 327 Deals &#8594;</div>
+          <span class="kpi-v gt" id="dyn-exec-brutto">32,85<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
+          <div class="kpi-c" id="dyn-exec-brutto-c"><i data-lucide="euro" size="11"></i> Alle 327 Deals &#8594;</div>
         </div>
         <div class="kpi strip" style="cursor:pointer" onclick="openDrawer('all','prob')">
           <span class="kpi-ey">Gewichtet</span>
-          <span class="kpi-v" style="color:var(--elmi-red)">1,017<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
+          <span class="kpi-v" style="color:var(--elmi-red)" id="dyn-exec-weighted">1,017<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
           <div class="kpi-c">&#8594; sortiert nach Wahrsch.</div>
         </div>
         <div class="kpi" style="cursor:pointer" onclick="openYTDModal()">
@@ -486,38 +486,38 @@ canvas.clickable{cursor:pointer}
       <div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(175px,1fr));margin-bottom:22px">
         <div class="kpi strip" style="cursor:pointer" onclick="openDrawerGroup('CPO')">
           <span class="kpi-ey">CPO</span>
-          <span class="kpi-v gt">15,8<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
-          <div class="kpi-c">24 Deals &middot; 2,78 Mio. gew. &#8594;</div>
+          <span class="kpi-v gt" id="dyn-grp-CPO-v">15,8<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
+          <div class="kpi-c" id="dyn-grp-CPO-c">24 Deals &middot; 2,78 Mio. gew. &#8594;</div>
           <div class="prog-bg"><div class="prog-fill" style="width:100%"></div></div>
         </div>
         <div class="kpi" style="cursor:pointer" onclick="openDrawerGroup('Utility')">
           <span class="kpi-ey">Utility / Stadtwerke</span>
-          <span class="kpi-v" style="color:var(--info)">5,87<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
-          <div class="kpi-c">45 Deals &middot; 4,78 Mio. gew. &#8594;</div>
+          <span class="kpi-v" style="color:var(--info)" id="dyn-grp-Utility-v">5,87<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
+          <div class="kpi-c" id="dyn-grp-Utility-c">45 Deals &middot; 4,78 Mio. gew. &#8594;</div>
           <div class="prog-bg"><div class="prog-fill" style="width:37%;background:var(--info)"></div></div>
         </div>
         <div class="kpi" style="cursor:pointer" onclick="openDrawerGroup('Logistik')">
           <span class="kpi-ey">Logistik / Fleet</span>
-          <span class="kpi-v" style="color:var(--elmi-purple)">2,82<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
-          <div class="kpi-c">27 Deals &middot; 641 K gew. &#8594;</div>
+          <span class="kpi-v" style="color:var(--elmi-purple)" id="dyn-grp-Logistik-v">2,82<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
+          <div class="kpi-c" id="dyn-grp-Logistik-c">27 Deals &middot; 641 K gew. &#8594;</div>
           <div class="prog-bg"><div class="prog-fill" style="width:18%;background:var(--elmi-purple)"></div></div>
         </div>
         <div class="kpi" style="cursor:pointer" onclick="openDrawerGroup('Wholesale')">
           <span class="kpi-ey">Wholesale</span>
-          <span class="kpi-v" style="color:var(--elmi-tang)">2,26<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
-          <div class="kpi-c">43 Deals &middot; 503 K gew. &#8594;</div>
+          <span class="kpi-v" style="color:var(--elmi-tang)" id="dyn-grp-Wholesale-v">2,26<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
+          <div class="kpi-c" id="dyn-grp-Wholesale-c">43 Deals &middot; 503 K gew. &#8594;</div>
           <div class="prog-bg"><div class="prog-fill" style="width:14%;background:var(--elmi-tang)"></div></div>
         </div>
         <div class="kpi" style="cursor:pointer" onclick="openDrawerGroup('EPC')">
           <span class="kpi-ey">EPC</span>
-          <span class="kpi-v" style="color:var(--warn)">2,12<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
-          <div class="kpi-c">29 Deals &middot; 347 K gew. &#8594;</div>
+          <span class="kpi-v" style="color:var(--warn)" id="dyn-grp-EPC-v">2,12<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
+          <div class="kpi-c" id="dyn-grp-EPC-c">29 Deals &middot; 347 K gew. &#8594;</div>
           <div class="prog-bg"><div class="prog-fill" style="width:13%;background:var(--warn)"></div></div>
         </div>
         <div class="kpi" style="cursor:pointer" onclick="openDrawerGroup('Other')">
           <span class="kpi-ey">Other</span>
-          <span class="kpi-v" style="color:var(--fg2)">3,99<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
-          <div class="kpi-c">159 Deals &middot; 1,12 Mio. gew. &#8594;</div>
+          <span class="kpi-v" style="color:var(--fg2)" id="dyn-grp-Other-v">3,99<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
+          <div class="kpi-c" id="dyn-grp-Other-c">159 Deals &middot; 1,12 Mio. gew. &#8594;</div>
           <div class="prog-bg"><div class="prog-fill" style="width:25%;background:var(--n300)"></div></div>
         </div>
       </div>
@@ -2167,6 +2167,41 @@ function getWeekNum5(d){
   document.getElementById('kpi-stage4').textContent = s4;
   document.getElementById('kpi-stage3').textContent = s3;
 })();
+
+// ── renderDashboardKPIs — recomputes all static KPI numbers from stage config ──
+function fmtKpiV(n){
+  if(n>=1e6) return (n/1e6).toFixed(2)+'<small style="font-size:.4em;letter-spacing:0"> Mio.</small>';
+  if(n>=1000) return Math.round(n/1000)+'<small style="font-size:.4em;letter-spacing:0"> K</small>';
+  return Math.round(n);
+}
+function renderDashboardKPIs(){
+  const GOAL=10000000;
+  // active deals only (S0–S4)
+  const active=agg(d=>{const n=stageNum(d.stage);return n>=0&&n<=4;});
+  const brutto=active.revenue, weighted=active.weighted, deals=active.count;
+  const pct=weighted/GOAL*100;
+  const ge=id=>document.getElementById(id);
+
+  // Goal bar
+  ge('dyn-goal-pct').textContent=pct.toFixed(2)+'% gewichtet';
+  ge('dyn-goal-fill').style.width=Math.min(100,pct).toFixed(2)+'%';
+  ge('dyn-goal-stat-w').innerHTML='Gewichtete Pipeline <strong>'+fmt(weighted)+' EUR</strong>';
+  ge('dyn-goal-brutto').textContent=fmt(brutto)+' EUR';
+  ge('dyn-goal-deals').textContent=deals;
+
+  // Executive KPI cards
+  ge('dyn-exec-brutto').innerHTML=fmtKpiV(brutto);
+  ge('dyn-exec-brutto-c').innerHTML='<i data-lucide="euro" size="11"></i> Alle '+deals+' Deals &#8594;';
+  ge('dyn-exec-weighted').innerHTML=fmtKpiV(weighted);
+
+  // Kundengruppen KPI cards — weighted value + deal count per group
+  ['CPO','Utility','Logistik','Wholesale','EPC','Other'].forEach(g=>{
+    const ga=grpAgg(g);
+    const vc=ge('dyn-grp-'+g+'-c');
+    if(vc) vc.innerHTML=ga.count+' Deals &middot; '+fmt(ga.weighted)+' gew. &#8594;';
+  });
+}
+renderDashboardKPIs();
 
 lucide.createIcons();
 
