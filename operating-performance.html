@@ -9,7 +9,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    /* ── Design Tokens (1:1 aus cpo.html) ── */
     :root {
       --n0:#FFFFFF;--n50:#FAFAFB;--n100:#F4F4F6;--n200:#E7E7EB;--n300:#D1D1D8;
       --n400:#9A9AA5;--n500:#6B6B76;--n600:#4A4A55;--n700:#2E2E36;--n800:#1B1B22;--n900:#0E0E14;
@@ -17,13 +16,11 @@
       --bg-dark:#0E0E14;--bg-dark2:#16161E;--bg-dark3:#1B1B22;
       --border1:var(--n200);--border2:var(--n300);
       --fg1:var(--n900);--fg2:var(--n600);--fg3:var(--n400);
-      --elmi-orange:#F39A3A;--elmi-tangerine:#EC6A2A;--elmi-red:#E32028;
-      --elmi-magenta:#B5188B;--elmi-purple:#6D2A99;
+      --elmi-orange:#F39A3A;--elmi-red:#E32028;--elmi-purple:#6D2A99;
       --elmi-grad:linear-gradient(90deg,#F39A3A 0%,#EC6A2A 22%,#E32028 48%,#B5188B 78%,#6D2A99 100%);
-      --c1:#E32028;--c2:#6D2A99;--c3:#EC6A2A;--c4:#2563EB;--c5:#1F9D55;--c6:#B5188B;--c7:#E2A100;
-      --r-sm:8px;--r-md:14px;--r-lg:22px;--r-xl:32px;--r-pill:999px;
+      --c5:#1F9D55;
+      --r-sm:8px;--r-md:14px;--r-pill:999px;
       --s1:0 1px 2px rgba(14,14,20,.06);--s2:0 4px 12px rgba(14,14,20,.08);
-      --s3:0 12px 32px rgba(14,14,20,.10);--s4:0 24px 60px rgba(14,14,20,.16);
       --font:"Maven Pro",system-ui,sans-serif;
       --header-h:52px;--nav-h:40px;
     }
@@ -31,7 +28,7 @@
     html,body{height:100%}
     body{background:var(--bg2);color:var(--fg1);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
 
-    /* ── Login overlay ── */
+    /* ── Login ── */
     .elmi-login-overlay{position:fixed;inset:0;background:#0E0E14;z-index:999999;
       display:flex;align-items:center;justify-content:center;font-family:var(--font)}
     .elmi-login-box{background:#1B1B22;border:1px solid rgba(255,255,255,.1);border-radius:16px;
@@ -51,13 +48,13 @@
     .elmi-login-err{color:#E32028;font-size:12px;min-height:18px;margin-top:6px}
     .elmi-login-hint{font-size:11px;color:#3A3A3C;margin-top:18px}
 
-    /* ── App shell ── */
+    /* ── Header ── */
     .app-header{position:fixed;top:0;left:0;right:0;height:var(--header-h);
       background:var(--bg-dark);border-bottom:1px solid rgba(255,255,255,.07);
       display:flex;align-items:center;gap:12px;padding:0 20px;z-index:200}
     .header-logo{width:32px;height:32px;border-radius:8px;background:var(--elmi-grad);
-      display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;
-      color:#fff;flex-shrink:0}
+      display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .header-logo svg{width:18px;height:18px}
     .header-title-wrap{display:flex;flex-direction:column;gap:1px}
     .header-title{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.2px}
     .header-sub{font-size:10px;color:#6B6B76;letter-spacing:.3px;text-transform:uppercase}
@@ -66,59 +63,75 @@
     .sn-badge{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);
       border:1px solid rgba(255,255,255,.08);border-radius:var(--r-pill);
       padding:4px 12px;font-size:11px;color:#9A9AA5}
-    .sn-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;flex-shrink:0}
-    .sn-dot.offline{background:#6B6B76}
+    .sn-dot{width:7px;height:7px;border-radius:50%;background:#6B6B76;flex-shrink:0}
+    .sn-dot.online{background:#4ade80}
 
+    /* ── Nav ── */
     .app-nav{position:fixed;top:var(--header-h);left:0;right:0;height:var(--nav-h);
       background:var(--bg1);border-bottom:1px solid var(--border1);
-      display:flex;align-items:stretch;padding:0 12px;gap:2px;z-index:190;
-      overflow-x:auto}
-    .nav-btn{display:flex;align-items:center;gap:6px;padding:0 14px;
+      display:flex;align-items:stretch;padding:0 12px;z-index:190;overflow-x:auto}
+    .nav-btn{display:flex;align-items:center;gap:5px;padding:0 13px;
       font-size:12px;font-weight:600;color:var(--fg3);background:none;border:none;
       cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;
-      font-family:var(--font);transition:color .15s}
+      font-family:var(--font);transition:color .15s;flex-shrink:0}
     .nav-btn:hover{color:var(--fg1)}
     .nav-btn.active{color:var(--elmi-red);border-bottom-color:var(--elmi-red)}
-    .nav-num{font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--fg3)}
+    .nav-dot{font-size:16px;line-height:1;color:var(--fg3)}
+    .nav-num{font-size:9px;font-weight:700;letter-spacing:.5px;color:inherit;opacity:.6}
 
+    /* ── Content ── */
     .app-content{position:fixed;top:calc(var(--header-h) + var(--nav-h));left:0;right:0;bottom:0;overflow-y:auto}
 
     /* ── Buttons ── */
     .btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;
       font-size:12px;font-weight:600;border-radius:var(--r-pill);cursor:pointer;
-      font-family:var(--font);border:1px solid var(--border2);
-      background:var(--bg1);color:var(--fg2);transition:all .15s}
-    .btn:hover{background:var(--bg3);color:var(--fg1)}
+      font-family:var(--font);border:1px solid rgba(255,255,255,.15);
+      background:rgba(255,255,255,.07);color:#ccc;transition:all .15s;text-decoration:none}
+    .btn:hover{background:rgba(255,255,255,.12);color:#fff}
+    .btn-light{border-color:var(--border2);background:var(--bg1);color:var(--fg2)}
+    .btn-light:hover{background:var(--bg3);color:var(--fg1)}
     .btn-primary{background:var(--elmi-grad);color:#fff;border-color:transparent}
     .btn-primary:hover{opacity:.9}
-    .btn-sm{height:26px;padding:0 10px;font-size:11px}
+    .btn-sm{height:28px;padding:0 12px;font-size:11px}
 
     /* ── Views ── */
-    .view{display:none;padding:24px}
+    .view{display:none;padding:0}
     .view.active{display:block}
 
-    /* ── Page elements ── */
-    .page-header{margin-bottom:20px}
-    .page-title{font-size:20px;font-weight:800;letter-spacing:-.3px;color:var(--fg1)}
-    .page-desc{font-size:12px;color:var(--fg3);margin-top:4px}
-    .section-label{font-size:10px;font-weight:700;letter-spacing:.8px;
-      text-transform:uppercase;color:var(--fg3);margin:0 0 10px}
+    /* ── Page topbar (same pattern as cpo.html) ── */
+    .page-topbar{display:flex;align-items:flex-start;justify-content:space-between;
+      padding:20px 24px 16px;border-bottom:1px solid var(--border1);background:var(--bg1);
+      margin-bottom:24px}
+    .topbar-crumb{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+      color:var(--fg3);margin-bottom:6px}
+    .topbar-title{font-size:20px;font-weight:800;letter-spacing:-.3px;color:var(--fg1);margin-bottom:4px}
+    .topbar-desc{font-size:12px;color:var(--fg3)}
+    .topbar-nav{display:flex;gap:8px;align-items:center;flex-shrink:0;margin-left:24px;padding-top:4px}
+    .topbar-nav .btn-light{border-color:var(--border2);background:var(--bg1);color:var(--fg2)}
+    .topbar-nav .btn-light:hover{background:var(--bg3);color:var(--fg1)}
 
-    /* ── KPI cards ── */
-    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+    /* ── Page body padding ── */
+    .page-body{padding:0 24px 24px}
+
+    /* ── KPI section headers (like "ENERGY", "SESSIONS") ── */
+    .kpi-section{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+      color:var(--fg3);margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border1)}
+    .kpi-section:first-child{margin-top:0}
+
+    /* ── KPI cards (cpo.html style: no dot, ALL-CAPS label) ── */
+    .kpi-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:4px}
     .kpi-card{background:var(--bg1);border:1px solid var(--border1);border-radius:var(--r-md);
-      padding:16px 18px;box-shadow:var(--s1)}
+      padding:14px 16px;box-shadow:var(--s1);min-width:140px;flex:1}
     .kpi-card.dark{background:var(--bg-dark3);border-color:rgba(255,255,255,.07)}
     .kpi-card.dark .kpi-label,.kpi-card.dark .kpi-sub{color:#6B6B76}
     .kpi-card.dark .kpi-value{color:#fff}
-    .kpi-label{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:600;
-      letter-spacing:.5px;text-transform:uppercase;color:var(--fg3);margin-bottom:8px}
-    .kpi-label-dot{width:6px;height:6px;border-radius:50%;background:var(--elmi-red);flex-shrink:0}
-    .kpi-value{font-size:26px;font-weight:800;letter-spacing:-.5px;color:var(--fg1);line-height:1.1}
+    .kpi-label{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
+      color:var(--fg3);margin-bottom:6px}
+    .kpi-value{font-size:24px;font-weight:800;letter-spacing:-.4px;color:var(--fg1);line-height:1.1}
     .kpi-value.accent{color:var(--elmi-red)}
     .kpi-value.green{color:var(--c5)}
     .kpi-value.orange{color:var(--elmi-orange)}
-    .kpi-unit{font-size:13px;font-weight:600;color:var(--fg3)}
+    .kpi-unit{font-size:12px;font-weight:600;color:var(--fg3)}
     .kpi-sub{font-size:10px;color:var(--fg3);margin-top:4px}
 
     /* ── Cards ── */
@@ -131,201 +144,321 @@
     .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
     @media(max-width:640px){.grid-2{grid-template-columns:1fr}}
 
-    /* ── Operating mode bars ── */
+    /* ── Mode bars ── */
     .mode-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border1)}
     .mode-name{width:140px;font-size:11px;font-weight:600;color:var(--fg2);flex-shrink:0}
     .mode-bar-wrap{flex:1;height:12px;background:var(--bg3);border-radius:var(--r-pill);overflow:hidden}
     .mode-bar{height:100%;border-radius:var(--r-pill);transition:width .4s}
     .mode-val{font-size:11px;color:var(--fg3);white-space:nowrap;min-width:120px;text-align:right}
 
-    /* ── Empty / upload state ── */
-    .upload-state{display:flex;flex-direction:column;align-items:center;justify-content:center;
-      min-height:60vh;gap:16px;text-align:center;padding:40px}
-    .upload-icon{font-size:48px;margin-bottom:4px}
-    .upload-title{font-size:22px;font-weight:800;letter-spacing:-.3px;color:var(--fg1)}
-    .upload-desc{font-size:13px;color:var(--fg3);max-width:480px;line-height:1.6}
-    .upload-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px}
-    .upload-fmt{font-size:10px;color:var(--fg3);max-width:520px;margin-top:12px;
-      background:var(--bg3);padding:10px 16px;border-radius:var(--r-sm);line-height:1.8}
+    /* ── Settings view ── */
+    .settings-body{padding:0 24px 24px}
+    .upload-zone{border:2px dashed var(--border2);border-radius:var(--r-md);
+      padding:28px 24px;text-align:center;cursor:pointer;background:var(--bg1);
+      transition:border-color .2s;margin-bottom:16px}
+    .upload-zone:hover{border-color:var(--elmi-red)}
+    .upload-zone-icon{font-size:32px;margin-bottom:8px}
+    .upload-zone-title{font-size:13px;font-weight:700;color:var(--fg1);margin-bottom:4px}
+    .upload-zone-sub{font-size:11px;color:var(--fg3)}
+    .data-info-strip{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--border1);
+      border-radius:var(--r-md);overflow:hidden;background:var(--bg1);margin-bottom:20px}
+    .data-info-cell{padding:12px 16px;flex:1;min-width:100px;border-right:1px solid var(--border1)}
+    .data-info-cell:last-child{border-right:none}
+    .data-info-label{font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--fg3);margin-bottom:4px}
+    .data-info-val{font-size:13px;font-weight:700;color:var(--fg1)}
+    .settings-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px}
+    .upload-fmt{font-size:10px;color:var(--fg3);margin-top:16px;line-height:1.7;
+      background:var(--bg3);padding:10px 14px;border-radius:var(--r-sm)}
 
-    /* ── Util basis text ── */
+    /* ── SoC day selector ── */
+    .day-select-wrap{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+    .day-select-label{font-size:11px;font-weight:600;color:var(--fg3)}
+    .day-select{height:32px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--r-sm);
+      background:var(--bg1);color:var(--fg1);font-family:var(--font);font-size:12px;
+      cursor:pointer;outline:none}
+    .day-select:focus{border-color:var(--elmi-red)}
+
+    /* ── Util basis ── */
     .util-basis{font-size:12px;color:var(--fg2);line-height:2.2;padding:4px 0}
   </style>
 </head>
 <body>
 
-<!-- Login overlay -->
+<!-- Login -->
 <div class="elmi-login-overlay" id="opdLoginOverlay">
   <div class="elmi-login-box">
     <div class="elmi-login-logo">&#9889;</div>
     <div class="elmi-login-title">ELMI Power</div>
     <div class="elmi-login-sub">Operating Performance Dashboard</div>
     <input class="elmi-login-inp" type="password" id="opdLoginPwd"
-      placeholder="Enter password"
-      onkeydown="if(event.key==='Enter')opdCheckLogin()">
+      placeholder="Enter password" onkeydown="if(event.key==='Enter')opdCheckLogin()">
     <button class="elmi-login-btn" onclick="opdCheckLogin()">Sign in</button>
     <div class="elmi-login-err" id="opdLoginErr"></div>
     <div class="elmi-login-hint">Access credentials from Wangyu Chen</div>
   </div>
 </div>
 
-<!-- App header -->
+<!-- Header -->
 <header class="app-header">
-  <div class="header-logo">&#9889;</div>
+  <div class="header-logo">
+    <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10.5 2L4 10h5l-1.5 6L16 8h-5z" fill="#fff" stroke="#fff" stroke-width=".5" stroke-linejoin="round"/>
+    </svg>
+  </div>
   <div class="header-title-wrap">
     <div class="header-title">Operating Performance</div>
     <div class="header-sub">CPO · Ladesessions · Energieanalyse</div>
   </div>
   <div class="header-spacer"></div>
   <div class="header-actions">
-    <button class="btn btn-sm" onclick="opdLoadDemo()">📂 Demo laden</button>
-    <button class="btn btn-sm" onclick="opdExportXlsx()">↓ XLSX</button>
-    <button class="btn btn-sm btn-primary" onclick="document.getElementById('opdFileInp').click()">↑ Upload</button>
+    <a href="ai-dashboard.html" class="btn btn-sm">← ELMI Dashboard</a>
+    <button class="btn btn-sm" onclick="opdLoadDemo()">Load Data</button>
+    <button class="btn btn-sm" onclick="opdExportXlsx()">XLSX</button>
     <input type="file" id="opdFileInp" accept=".xlsx,.xls,.csv" style="display:none" onchange="opdUpload(this)">
     <div class="sn-badge">
-      <div class="sn-dot offline" id="opdSnDot"></div>
-      <span id="opdSnText">Keine Daten</span>
+      <div class="sn-dot" id="opdSnDot"></div>
+      <span id="opdSnText">No data loaded</span>
     </div>
   </div>
 </header>
 
-<!-- Tab navigation -->
-<nav class="app-nav" id="opdNav">
-  <button class="nav-btn active" data-view="settings" onclick="opdGo('settings')">⚙ Settings</button>
+<!-- Nav -->
+<nav class="app-nav">
+  <button class="nav-btn active" data-view="settings" onclick="opdGo('settings')"><span class="nav-dot">·</span> Settings</button>
   <button class="nav-btn" data-view="executive" onclick="opdGo('executive')"><span class="nav-num">01</span> Executive</button>
   <button class="nav-btn" data-view="energy" onclick="opdGo('energy')"><span class="nav-num">02</span> Energy</button>
   <button class="nav-btn" data-view="sessions" onclick="opdGo('sessions')"><span class="nav-num">03</span> Sessions</button>
   <button class="nav-btn" data-view="utilization" onclick="opdGo('utilization')"><span class="nav-num">04</span> Utilization</button>
   <button class="nav-btn" data-view="battery" onclick="opdGo('battery')"><span class="nav-num">05</span> Battery</button>
   <button class="nav-btn" data-view="opmode" onclick="opdGo('opmode')"><span class="nav-num">06</span> Op. Mode</button>
-  <button class="nav-btn" data-view="socday" onclick="opdGo('socday')"><span class="nav-num">07</span> SoC / Tag</button>
+  <button class="nav-btn" data-view="socday" onclick="opdGo('socday')"><span class="nav-num">07</span> SoC / Day</button>
 </nav>
 
-<!-- Content -->
 <main class="app-content">
 
-  <!-- Settings / Upload -->
+  <!-- ── Settings ── -->
   <div class="view active" id="view-settings">
-    <div class="upload-state">
-      <div class="upload-icon">📊</div>
-      <div class="upload-title">Operating Performance Dashboard</div>
-      <div class="upload-desc">Gleiche Datenstruktur wie der CPO-Analyzer. Excel-Datei hochladen oder Demo-Datensatz (7 Tage, 10.080 Minuten Auflösung) laden.</div>
-      <div class="upload-btns">
-        <button class="btn" style="height:44px;padding:0 24px;font-size:13px" onclick="opdLoadDemo()">📂 Demo-Daten laden</button>
-        <button class="btn btn-primary" style="height:44px;padding:0 24px;font-size:13px" onclick="document.getElementById('opdFileInp').click()">↑ Excel hochladen</button>
+    <div class="page-topbar">
+      <div>
+        <div class="topbar-crumb">SETTINGS · DATA</div>
+        <h2 class="topbar-title">Analysis Parameters</h2>
+        <div class="topbar-desc">Upload raw Excel data or load the embedded demo dataset. The entire dashboard will be recalculated automatically.</div>
       </div>
+    </div>
+    <div class="settings-body">
+
+      <div class="upload-zone" onclick="document.getElementById('opdFileInp').click()">
+        <div class="upload-zone-icon">📂</div>
+        <div class="upload-zone-title">Upload Raw Excel Data</div>
+        <div class="upload-zone-sub">Click to select file · same column format as the demo export</div>
+      </div>
+
+      <div id="settings-data-info" style="display:none">
+        <div class="data-info-strip">
+          <div class="data-info-cell"><div class="data-info-label">Source</div><div class="data-info-val" id="si-source">—</div></div>
+          <div class="data-info-cell"><div class="data-info-label">Station SN</div><div class="data-info-val" id="si-sn">—</div></div>
+          <div class="data-info-cell"><div class="data-info-label">Period</div><div class="data-info-val" id="si-period">—</div></div>
+          <div class="data-info-cell"><div class="data-info-label">Days</div><div class="data-info-val" id="si-days">—</div></div>
+          <div class="data-info-cell"><div class="data-info-label">Data Points</div><div class="data-info-val" id="si-pts">—</div></div>
+        </div>
+      </div>
+
+      <div class="settings-actions">
+        <button class="btn-light btn" onclick="opdLoadDemo()">Load Demo Dataset (7 days embedded)</button>
+        <button class="btn-primary btn" id="settings-open-btn" style="display:none" onclick="opdGo('executive')">Open Dashboard →</button>
+      </div>
+
       <div class="upload-fmt">Format: SN · Timestamp · AC kWh · AC kW · Battery SoC · Battery kW · Gun1 Meter · Gun1 SoC · Gun1 kW · Gun1 Status · Gun2 Meter · Gun2 SoC · Gun2 kW · Gun2 Status</div>
+
+      <div style="margin-top:20px;font-size:11px;color:var(--fg3);line-height:1.7">
+        Data basis: ELMI AiO 360 · 1-minute raw data. Energy is calculated from meter deltas; sessions are detected as contiguous blocks with DC power &gt; 0.5 kW or status = "Charging" per gun.
+      </div>
     </div>
   </div>
 
-  <!-- Executive summary -->
+  <!-- ── Executive ── -->
   <div class="view" id="view-executive">
-    <div class="page-header">
-      <div class="page-title" id="exec-title">Executive Summary</div>
-      <div class="page-desc" id="exec-desc">Laden Sie Daten, um die Analyse zu starten.</div>
+    <div class="page-topbar">
+      <div>
+        <div class="topbar-crumb">PAGE 01 · OVERVIEW</div>
+        <h2 class="topbar-title" id="exec-title">Executive Summary</h2>
+        <div class="topbar-desc" id="exec-desc">Condensed key metrics on energy, sessions, utilization and battery for the selected period.</div>
+      </div>
+      <div class="topbar-nav">
+        <button class="btn-light btn btn-sm" onclick="opdGo('settings')">← Back</button>
+        <button class="btn-light btn btn-sm" onclick="opdGo('energy')">Next →</button>
+      </div>
     </div>
-    <div class="section-label">Schlüsselkennzahlen</div>
-    <div class="kpi-grid" id="exec-kpi"></div>
+    <div class="page-body" id="exec-body">
+      <div class="kpi-section">Energy</div>
+      <div class="kpi-row" id="exec-kpi-energy"></div>
+      <div class="kpi-section">Sessions</div>
+      <div class="kpi-row" id="exec-kpi-sessions"></div>
+      <div class="kpi-section">Performance &amp; Utilization</div>
+      <div class="kpi-row" id="exec-kpi-util"></div>
+      <div class="kpi-section">Battery</div>
+      <div class="kpi-row" id="exec-kpi-battery"></div>
+    </div>
   </div>
 
-  <!-- Energy -->
+  <!-- ── Energy ── -->
   <div class="view" id="view-energy">
-    <div class="page-header">
-      <div class="page-title" id="energy-title">Energy Analysis</div>
-      <div class="page-desc" id="energy-desc"></div>
-    </div>
-    <div class="section-label">Energy KPIs</div>
-    <div class="kpi-grid" style="margin-bottom:16px" id="opd-kpi-energy"></div>
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">AC Power · Stündlicher Verlauf</div><div class="card-sub">Ø kW pro Stunde (alle Tage)</div></div></div>
-        <div class="chart-wrap"><canvas id="opd-c-hourly"></canvas></div>
+    <div class="page-topbar">
+      <div>
+        <div class="topbar-crumb">PAGE 02 · ENERGY</div>
+        <h2 class="topbar-title">Energy Analysis</h2>
+        <div class="topbar-desc">AC grid input, DC output per gun, efficiency and peak power over the measurement period.</div>
       </div>
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">DC Source Split</div><div class="card-sub">Gun 1 vs. Gun 2 Energieanteil</div></div></div>
-        <div class="chart-wrap"><canvas id="opd-c-split"></canvas></div>
+      <div class="topbar-nav">
+        <button class="btn-light btn btn-sm" onclick="opdGo('executive')">← Back</button>
+        <button class="btn-light btn btn-sm" onclick="opdGo('sessions')">Next →</button>
       </div>
     </div>
-    <div class="card" style="margin-top:16px">
-      <div class="card-header"><div><div class="card-title">Energie pro Tag</div><div class="card-sub">AC Input (kWh) nach Tag · Meterstand-Delta</div></div></div>
-      <div class="chart-wrap" style="max-height:160px"><canvas id="opd-c-daily"></canvas></div>
+    <div class="page-body">
+      <div class="kpi-section">Energy KPIs</div>
+      <div class="kpi-row" id="opd-kpi-energy"></div>
+      <div style="margin-top:20px" class="grid-2">
+        <div class="card">
+          <div class="card-header"><div><div class="card-title">AC Power · Hourly Average</div><div class="card-sub">Ø kW per hour across all days</div></div></div>
+          <div class="chart-wrap"><canvas id="opd-c-hourly"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><div class="card-title">DC Source Split</div><div class="card-sub">Gun 1 vs. Gun 2 energy share</div></div></div>
+          <div class="chart-wrap"><canvas id="opd-c-split"></canvas></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-header"><div><div class="card-title">Energy per Day</div><div class="card-sub">AC input (kWh) by day · meter delta</div></div></div>
+        <div class="chart-wrap" style="max-height:160px"><canvas id="opd-c-daily"></canvas></div>
+      </div>
     </div>
   </div>
 
-  <!-- Sessions -->
+  <!-- ── Sessions ── -->
   <div class="view" id="view-sessions">
-    <div class="page-header">
-      <div class="page-title">Session-Analyse</div>
-      <div class="page-desc">Erkennung: AC-Leistung &gt; 0,5 kW oder Status = Charging · Mindestdauer: 2 Minuten</div>
-    </div>
-    <div class="section-label">Session KPIs</div>
-    <div class="kpi-grid" style="margin-bottom:16px" id="opd-kpi-sessions"></div>
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">Session-Energie Histogramm</div><div class="card-sub">kWh pro Session</div></div></div>
-        <div class="chart-wrap"><canvas id="opd-c-seshist"></canvas></div>
+    <div class="page-topbar">
+      <div>
+        <div class="topbar-crumb">PAGE 03 · SESSIONS</div>
+        <h2 class="topbar-title">Session Analysis</h2>
+        <div class="topbar-desc">Detection: DC power &gt; 0.5 kW or status = Charging · minimum duration: 2 minutes.</div>
       </div>
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">Sessions pro Tag</div><div class="card-sub">Gun 1 + Gun 2 kombiniert</div></div></div>
-        <div class="chart-wrap"><canvas id="opd-c-sesday"></canvas></div>
+      <div class="topbar-nav">
+        <button class="btn-light btn btn-sm" onclick="opdGo('energy')">← Back</button>
+        <button class="btn-light btn btn-sm" onclick="opdGo('utilization')">Next →</button>
+      </div>
+    </div>
+    <div class="page-body">
+      <div class="kpi-section">Session KPIs</div>
+      <div class="kpi-row" id="opd-kpi-sessions"></div>
+      <div style="margin-top:20px" class="grid-2">
+        <div class="card">
+          <div class="card-header"><div><div class="card-title">Session Energy Histogram</div><div class="card-sub">kWh per session</div></div></div>
+          <div class="chart-wrap"><canvas id="opd-c-seshist"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><div class="card-title">Sessions per Day</div><div class="card-sub">Gun 1 + Gun 2 combined</div></div></div>
+          <div class="chart-wrap"><canvas id="opd-c-sesday"></canvas></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Utilization -->
+  <!-- ── Utilization ── -->
   <div class="view" id="view-utilization">
-    <div class="page-header">
-      <div class="page-title">Utilization Analysis</div>
-      <div class="page-desc">Auslastungsmetriken auf Basis von Meterstand-Deltas und Benchmark-Berechnung</div>
+    <div class="page-topbar">
+      <div>
+        <div class="topbar-crumb">PAGE 04 · UTILIZATION</div>
+        <h2 class="topbar-title">Utilization Analysis</h2>
+        <div class="topbar-desc">Utilization metrics based on meter deltas and benchmark calculation.</div>
+      </div>
+      <div class="topbar-nav">
+        <button class="btn-light btn btn-sm" onclick="opdGo('sessions')">← Back</button>
+        <button class="btn-light btn btn-sm" onclick="opdGo('battery')">Next →</button>
+      </div>
     </div>
-    <div class="section-label">Utilization KPIs</div>
-    <div class="kpi-grid" style="margin-bottom:16px" id="opd-kpi-util"></div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-header"><div class="card-title">Berechnungsgrundlage</div></div>
-      <div id="opd-util-basis" class="util-basis"></div>
+    <div class="page-body">
+      <div class="kpi-section">Utilization KPIs</div>
+      <div class="kpi-row" id="opd-kpi-util"></div>
+      <div class="card" style="margin-top:20px">
+        <div class="card-header"><div class="card-title">Calculation Basis</div></div>
+        <div id="opd-util-basis" class="util-basis"></div>
+      </div>
     </div>
   </div>
 
-  <!-- Battery -->
+  <!-- ── Battery ── -->
   <div class="view" id="view-battery">
-    <div class="page-header">
-      <div class="page-title">Battery Analyse</div>
-      <div class="page-desc">Speicherkennzahlen aus bat_soc und bat_kw Messwerten</div>
+    <div class="page-topbar">
+      <div>
+        <div class="topbar-crumb">PAGE 05 · BATTERY</div>
+        <h2 class="topbar-title">Battery Analysis</h2>
+        <div class="topbar-desc">Storage metrics from bat_soc and bat_kw measurements.</div>
+      </div>
+      <div class="topbar-nav">
+        <button class="btn-light btn btn-sm" onclick="opdGo('utilization')">← Back</button>
+        <button class="btn-light btn btn-sm" onclick="opdGo('opmode')">Next →</button>
+      </div>
     </div>
-    <div class="section-label">Battery KPIs</div>
-    <div class="kpi-grid" style="margin-bottom:16px" id="opd-kpi-bat"></div>
+    <div class="page-body">
+      <div class="kpi-section">Battery KPIs</div>
+      <div class="kpi-row" id="opd-kpi-bat"></div>
+    </div>
   </div>
 
-  <!-- Operating Mode -->
+  <!-- ── Operating Mode ── -->
   <div class="view" id="view-opmode">
-    <div class="page-header">
-      <div class="page-title">Operating Mode</div>
-      <div class="page-desc">Verteilung der Betriebszustände über den gesamten Analysezeitraum</div>
-    </div>
-    <div class="section-label">Betriebsmodus-Verteilung</div>
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">Betriebsmodus</div><div class="card-sub">Dauer und Anteil an Scope-Zeit</div></div></div>
-        <div id="opd-mode-bars"></div>
+    <div class="page-topbar">
+      <div>
+        <div class="topbar-crumb">PAGE 06 · OPERATING MODE</div>
+        <h2 class="topbar-title">Operating Mode</h2>
+        <div class="topbar-desc">Distribution of operating states over the entire analysis period.</div>
       </div>
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">Modus-Verteilung</div><div class="card-sub">Anteil Idle · Single · Parallel</div></div></div>
-        <div class="chart-wrap"><canvas id="opd-c-mode"></canvas></div>
+      <div class="topbar-nav">
+        <button class="btn-light btn btn-sm" onclick="opdGo('battery')">← Back</button>
+        <button class="btn-light btn btn-sm" onclick="opdGo('socday')">Next →</button>
+      </div>
+    </div>
+    <div class="page-body">
+      <div class="kpi-section">Operating Mode Distribution</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div><div class="card-title">Operating Mode</div><div class="card-sub">Duration and share of scope time</div></div></div>
+          <div id="opd-mode-bars"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><div class="card-title">Mode Distribution</div><div class="card-sub">Idle · Single · Parallel share</div></div></div>
+          <div class="chart-wrap"><canvas id="opd-c-mode"></canvas></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- SoC per Day -->
+  <!-- ── SoC / Day ── -->
   <div class="view" id="view-socday">
-    <div class="page-header">
-      <div class="page-title">Battery SoC per Day</div>
-      <div class="page-desc">1-Minuten-Auflösung · SoC + AC-Leistung + Gun-Leistungen</div>
+    <div class="page-topbar">
+      <div>
+        <div class="topbar-crumb">PAGE 07 · ENERGY FLOW</div>
+        <h2 class="topbar-title">Battery SoC &amp; Power per Day</h2>
+        <div class="topbar-desc">1-minute resolution · SoC + AC power + Gun 1/2 power for the selected day.</div>
+      </div>
+      <div class="topbar-nav">
+        <button class="btn-light btn btn-sm" onclick="opdGo('opmode')">← Back</button>
+        <button class="btn-light btn btn-sm" onclick="opdGo('settings')">↑ Settings</button>
+      </div>
     </div>
-    <div class="section-label">Tagesauswahl</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="opd-day-btns"></div>
-    <div class="card">
-      <div class="card-header"><div><div class="card-title" id="opd-soc-title">SoC &amp; Ladeleistung</div><div class="card-sub">Purple: Battery SoC · Orange: AC kW · Gestrichelt: Gun 1/2 kW</div></div></div>
-      <div class="chart-wrap" style="max-height:220px"><canvas id="opd-c-soc"></canvas></div>
+    <div class="page-body">
+      <div class="kpi-section">Battery SoC Summary</div>
+      <div class="kpi-row" id="opd-kpi-soc"></div>
+      <div style="margin-top:20px">
+        <div class="day-select-wrap">
+          <span class="day-select-label">Day:</span>
+          <select class="day-select" id="opd-day-sel" onchange="opdShowSocDay(this.value)"></select>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><div class="card-title" id="opd-soc-title">Battery SoC &amp; Power</div><div class="card-sub">Purple: Battery SoC · Orange: AC kW · Dashed: Gun 1/2 kW</div></div></div>
+          <div class="chart-wrap" style="max-height:240px"><canvas id="opd-c-soc"></canvas></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -335,38 +468,32 @@
 /* ── Auth ── */
 (function(){
   function H(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return Math.abs(h).toString(16);}
-  const KEY='opd_auth_v1', HASH=H('poftof-3hafri-Tesfis');
-  if(sessionStorage.getItem(KEY)===HASH) document.getElementById('opdLoginOverlay').style.display='none';
+  const KEY='opd_auth_v1',HASH=H('poftof-3hafri-Tesfis');
+  if(sessionStorage.getItem(KEY)===HASH)document.getElementById('opdLoginOverlay').style.display='none';
   window.opdCheckLogin=function(){
     const v=document.getElementById('opdLoginPwd').value;
-    if(H(v)===HASH){
-      sessionStorage.setItem(KEY,HASH);
-      document.getElementById('opdLoginOverlay').style.display='none';
-    } else {
-      document.getElementById('opdLoginErr').textContent='Incorrect password.';
-      document.getElementById('opdLoginPwd').value='';
-      document.getElementById('opdLoginPwd').focus();
-    }
+    if(H(v)===HASH){sessionStorage.setItem(KEY,HASH);document.getElementById('opdLoginOverlay').style.display='none';}
+    else{document.getElementById('opdLoginErr').textContent='Incorrect password.';document.getElementById('opdLoginPwd').value='';document.getElementById('opdLoginPwd').focus();}
   };
 })();
 
 /* ── Routing ── */
-function opdGo(view){
-  location.hash='#'+view;
-}
+const VIEW_ORDER=['settings','executive','energy','sessions','utilization','battery','opmode','socday'];
+
+function opdGo(view){location.hash='#'+view;}
+
 function opdActivate(view){
+  if(!VIEW_ORDER.includes(view))view='settings';
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+view));
-  if(OPD.M){
-    if(view==='socday' && !OPD.socRendered){ opdRenderSocDays(); OPD.socRendered=true; }
-  }
+  if(view==='socday'&&OPD.M&&!OPD.socRendered){opdRenderSocDays();OPD.socRendered=true;}
 }
-window.addEventListener('hashchange',()=>{ const v=location.hash.slice(1)||'settings'; opdActivate(v); });
-document.addEventListener('DOMContentLoaded',()=>{ const v=location.hash.slice(1)||'settings'; opdActivate(v); });
+window.addEventListener('hashchange',()=>opdActivate(location.hash.slice(1)||'settings'));
+document.addEventListener('DOMContentLoaded',()=>opdActivate(location.hash.slice(1)||'settings'));
 
 /* ── Chart helpers ── */
 const P={red:'#E32028',orange:'#F39A3A',tang:'#EC6A2A',mag:'#B5188B',purple:'#6D2A99',
-  green:'#1F9D55',blue:'#2563EB',amber:'#E2A100',n200:'#E7E7EB',n400:'#9A9AA5',n900:'#0E0E14'};
+  green:'#1F9D55',blue:'#2563EB',amber:'#E2A100',n200:'#E7E7EB',n400:'#9A9AA5'};
 function areaFill(ctx,hex,a1=0.18,a2=0){
   const g=ctx.createLinearGradient(0,0,0,200);
   g.addColorStop(0,hex+Math.round(a1*255).toString(16).padStart(2,'0'));
@@ -380,14 +507,10 @@ const BASE={responsive:true,maintainAspectRatio:true,
     y:{grid:{color:'rgba(14,14,20,.04)'},ticks:{color:'#9A9AA5',font:{size:10}}}}};
 function deepMerge(a,b){
   const r=Object.assign({},a);
-  for(const k in b){
-    if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])) r[k]=deepMerge(a[k]||{},b[k]);
-    else r[k]=b[k];
-  }
+  for(const k in b){if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k]))r[k]=deepMerge(a[k]||{},b[k]);else r[k]=b[k];}
   return r;
 }
-const OPD={db:null,M:null,charts:{},activeDay:0,socRendered:false};
-
+const OPD={db:null,M:null,charts:{},socRendered:false};
 function opdMkChart(id,type,data,opts){
   const el=document.getElementById(id);if(!el)return null;
   if(el._chart){el._chart.destroy();el._chart=null;}
@@ -402,10 +525,18 @@ const fmtPct=v=>v==null?'—':(v*100).toFixed(1)+'%';
 const fmtDur=m=>{const h=Math.floor(m/60),mn=Math.round(m%60);return h>0?h+'h '+mn+'m':mn+'m';};
 const fmtDate=t=>new Date(t).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'UTC'});
 
+/* ── KPI card builder (cpo.html style: no dot, ALL-CAPS) ── */
+function opdK(label,value,unit,sub,cls=''){
+  return `<div class="kpi-card${cls?' '+cls:''}">
+    <div class="kpi-label">${label}</div>
+    <div class="kpi-value${cls&&cls!=='dark'?' '+cls:''}">${value}${unit?'<span class="kpi-unit"> '+unit+'</span>':''}</div>
+    <div class="kpi-sub">${sub}</div>
+  </div>`;
+}
+
 /* ── Demo decode ── */
 function opdDecodeDemo(d){
-  const ST=['Available','Charging','Finishing','Preparing','Starting'];
-  const n=d.n;
+  const ST=['Available','Charging','Finishing','Preparing','Starting'],n=d.n;
   function decRLE(rle,scale){
     const out=new Float32Array(n);let idx=0,ri=0;
     while(ri<rle.length){const cnt=rle[ri++],val=rle[ri++];for(let j=0;j<cnt;j++)out[idx++]=val/scale;}
@@ -421,16 +552,11 @@ function opdDecodeDemo(d){
   const ac_kw=decRLE(d.ac_kw,10),bat_soc=decRLE(d.bat_soc,1),bat_kw=decRLE(d.bat_kw,10);
   const g1_kw=decRLE(d.g1_kw,10),g1_soc=decRLE(d.g1_soc,1),g1_si=decRLE(d.g1_st,1);
   const g2_kw=decRLE(d.g2_kw,10),g2_soc=decRLE(d.g2_soc,1),g2_si=decRLE(d.g2_st,1);
-  const ac_kwh=decSparse(d.ac_d,d.ac_kwh0/100);
-  const g1_kwh=decSparse(d.g1_d,d.g1_kwh0/100);
-  const g2_kwh=decSparse(d.g2_d,d.g2_kwh0/100);
+  const ac_kwh=decSparse(d.ac_d,d.ac_kwh0/100),g1_kwh=decSparse(d.g1_d,d.g1_kwh0/100),g2_kwh=decSparse(d.g2_d,d.g2_kwh0/100);
   const rows=[];
-  for(let i=0;i<n;i++) rows.push({
-    t:d.t0+i*60000,
-    ac_kwh:ac_kwh[i],ac_kw:ac_kw[i],bat_soc:bat_soc[i],bat_kw:bat_kw[i],
+  for(let i=0;i<n;i++) rows.push({t:d.t0+i*60000,ac_kwh:ac_kwh[i],ac_kw:ac_kw[i],bat_soc:bat_soc[i],bat_kw:bat_kw[i],
     g1_kwh:g1_kwh[i],g1_kw:g1_kw[i],g1_soc:g1_soc[i],g1_st:ST[Math.round(g1_si[i])],
-    g2_kwh:g2_kwh[i],g2_kw:g2_kw[i],g2_soc:g2_soc[i],g2_st:ST[Math.round(g2_si[i])]
-  });
+    g2_kwh:g2_kwh[i],g2_kw:g2_kw[i],g2_soc:g2_soc[i],g2_st:ST[Math.round(g2_si[i])]});
   return rows;
 }
 
@@ -444,28 +570,22 @@ function opdUpload(inp){
       const ws=wb.Sheets[wb.SheetNames[0]];
       const raw=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
       const rows=opdParseRows(raw);
-      if(!rows||rows.length<10){alert('Zu wenige Datenzeilen. Bitte Format prüfen.');return;}
-      OPD.db={sn:rows[0]?.sn||'Upload',rows};
+      if(!rows||rows.length<10){alert('Too few data rows. Please check the format.');return;}
+      OPD.db={sn:rows[0]?.sn||'Upload',rows,source:'Excel Upload'};
       opdRun();
-    }catch(e){alert('Fehler: '+e.message);}
+    }catch(e){alert('Error: '+e.message);}
   };
-  rdr.readAsArrayBuffer(f);
-  inp.value='';
+  rdr.readAsArrayBuffer(f);inp.value='';
 }
 
 function opdParseRows(raw){
   if(!raw||raw.length<2)return[];
   const hdr=(raw[0]||[]).map(h=>(h+'').toLowerCase());
   function col(kws,def){const i=hdr.findIndex(h=>kws.every(k=>h.includes(k)));return i>=0?i:def;}
-  const ix={
-    sn:col(['sn'],0),ts:col(['timestamp'],1),
-    acE:col(['ac','kwh'],2),acP:col(['ac','power'],3),
-    bSoc:col(['battery','soc'],4),bP:col(['battery','power'],5),
-    g1E:col(['gun1','meter'],6),g1S:col(['gun1','soc'],7),
-    g1P:col(['gun1','power'],8),g1St:col(['gun1','status'],9),
-    g2E:col(['gun2','meter'],10),g2S:col(['gun2','soc'],11),
-    g2P:col(['gun2','power'],12),g2St:col(['gun2','status'],13)
-  };
+  const ix={sn:col(['sn'],0),ts:col(['timestamp'],1),acE:col(['ac','kwh'],2),acP:col(['ac','power'],3),
+    bSoc:col(['battery','soc'],4),bP:col(['battery','power'],5),g1E:col(['gun1','meter'],6),
+    g1S:col(['gun1','soc'],7),g1P:col(['gun1','power'],8),g1St:col(['gun1','status'],9),
+    g2E:col(['gun2','meter'],10),g2S:col(['gun2','soc'],11),g2P:col(['gun2','power'],12),g2St:col(['gun2','status'],13)};
   const rows=[];
   for(let i=1;i<raw.length;i++){
     const r=raw[i];if(!r)continue;
@@ -475,8 +595,7 @@ function opdParseRows(raw){
     else continue;
     if(isNaN(t))continue;
     const n=v=>{const x=parseFloat(v);return isNaN(x)?null:x;};
-    rows.push({t,sn:r[ix.sn],
-      ac_kwh:n(r[ix.acE]),ac_kw:n(r[ix.acP]),bat_soc:n(r[ix.bSoc]),bat_kw:n(r[ix.bP]),
+    rows.push({t,sn:r[ix.sn],ac_kwh:n(r[ix.acE]),ac_kw:n(r[ix.acP]),bat_soc:n(r[ix.bSoc]),bat_kw:n(r[ix.bP]),
       g1_kwh:n(r[ix.g1E]),g1_soc:n(r[ix.g1S]),g1_kw:n(r[ix.g1P]),g1_st:r[ix.g1St]||'',
       g2_kwh:n(r[ix.g2E]),g2_soc:n(r[ix.g2S]),g2_kw:n(r[ix.g2P]),g2_st:r[ix.g2St]||''});
   }
@@ -486,34 +605,21 @@ function opdParseRows(raw){
 
 /* ── Load demo ── */
 function opdLoadDemo(){
-  if(!window.OPD_DEMO){alert('Demo-Daten nicht gefunden. Seite neu laden.');return;}
-  OPD.db={sn:window.OPD_DEMO.sn,rows:opdDecodeDemo(window.OPD_DEMO)};
+  if(!window.OPD_DEMO){alert('Demo data not found. Please reload.');return;}
+  OPD.db={sn:window.OPD_DEMO.sn,rows:opdDecodeDemo(window.OPD_DEMO),source:'Demo Dataset (embedded)'};
   opdRun();
 }
 
 /* ── XLSX export ── */
 function opdExportXlsx(){
-  if(!OPD.db){alert('Keine Daten geladen.');return;}
+  if(!OPD.db){alert('No data loaded.');return;}
   const ws=XLSX.utils.json_to_sheet(OPD.db.rows.map(r=>({
-    SN:r.sn||OPD.db.sn,
-    Timestamp:new Date(r.t).toISOString(),
-    'AC kWh':r.ac_kwh,'AC kW':r.ac_kw,
-    'Battery SoC':r.bat_soc,'Battery kW':r.bat_kw,
+    SN:r.sn||OPD.db.sn,Timestamp:new Date(r.t).toISOString(),
+    'AC kWh':r.ac_kwh,'AC kW':r.ac_kw,'Battery SoC':r.bat_soc,'Battery kW':r.bat_kw,
     'Gun1 Meter':r.g1_kwh,'Gun1 SoC':r.g1_soc,'Gun1 kW':r.g1_kw,'Gun1 Status':r.g1_st,
-    'Gun2 Meter':r.g2_kwh,'Gun2 SoC':r.g2_soc,'Gun2 kW':r.g2_kw,'Gun2 Status':r.g2_st
-  })));
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'OPD');
+    'Gun2 Meter':r.g2_kwh,'Gun2 SoC':r.g2_soc,'Gun2 kW':r.g2_kw,'Gun2 Status':r.g2_st})));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'OPD');
   XLSX.writeFile(wb,'opd-export.xlsx');
-}
-
-/* ── KPI card builder ── */
-function opdKpiCard(label,value,unit,sub,accent='',dark=false){
-  return `<div class="kpi-card${dark?' dark':''}">
-    <div class="kpi-label"><span class="kpi-label-dot" style="${dark?'background:var(--elmi-orange)':''}"></span>${label}</div>
-    <div class="kpi-value${accent?' '+accent:''}">${value}${unit?'<span class="kpi-unit"> '+unit+'</span>':''}</div>
-    <div class="kpi-sub">${sub}</div>
-  </div>`;
 }
 
 /* ── Main compute ── */
@@ -523,8 +629,7 @@ function opdRun(){
   OPD.socRendered=false;
 
   const t0=rows[0].t,tn=rows[n-1].t;
-  const scopeMin=Math.round((tn-t0)/60000)+1;
-  const scopeHours=scopeMin/60;
+  const scopeMin=Math.round((tn-t0)/60000)+1,scopeHours=scopeMin/60;
 
   function meterDelta(field){
     let first=null,last=null;
@@ -553,7 +658,6 @@ function opdRun(){
   const daySet=new Set();
   rows.forEach(r=>{const d=new Date(r.t);daySet.add(`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`);});
   const days=[...daySet].sort(),D=days.length;
-
   function rowDayKey(r){const d=new Date(r.t);return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;}
 
   const hourlyKw=Array(24).fill(0),hourlyN=Array(24).fill(0);
@@ -596,20 +700,27 @@ function opdRun(){
 
   OPD.M={acKwh,dcKwh,g1Kwh,g2Kwh,efficiency,
     sessionCount:allSess.length,sessPerDay,sessAvgKwh,sessMedianKwh,sessAvgDur,sessKwh,
-    connTimeUtil,dcEnergyUtil,acTimeUtil,
-    batSocAvg,batSocMin,batSocMax,batThroughput,batCharging,
+    connTimeUtil,dcEnergyUtil,acTimeUtil,batSocAvg,batSocMin,batSocMax,batThroughput,batCharging,
     idleMin,singleMin,parallelMin,peakAc,scopeMin,scopeHours,D,days,
     hourlyAvg,daySessionCounts,dayAcKwh,t0,tn};
 
-  /* Update header badge */
-  document.getElementById('opdSnDot').className='sn-dot';
-  document.getElementById('opdSnText').textContent=OPD.db.sn+' · '+D+' Tage';
+  /* Header badge */
+  document.getElementById('opdSnDot').className='sn-dot online';
+  document.getElementById('opdSnText').textContent='SN '+OPD.db.sn;
+
+  /* Settings page data info */
+  document.getElementById('si-source').textContent=OPD.db.source||'Upload';
+  document.getElementById('si-sn').textContent=OPD.db.sn;
+  document.getElementById('si-period').textContent=fmtDate(t0)+' – '+fmtDate(tn);
+  document.getElementById('si-days').textContent=D;
+  document.getElementById('si-pts').textContent=n.toLocaleString('de-DE');
+  document.getElementById('settings-data-info').style.display='block';
+  document.getElementById('settings-open-btn').style.display='inline-flex';
 
   /* Destroy old charts */
   Object.values(OPD.charts).forEach(c=>{try{c.destroy();}catch(e){}});
   OPD.charts={};
 
-  /* Render all tabs */
   opdRenderExecutive();
   opdRenderEnergy();
   opdRenderSessions();
@@ -617,44 +728,54 @@ function opdRun(){
   opdRenderBattery();
   opdRenderMode();
 
-  /* Navigate to executive */
   opdGo('executive');
 }
 
 /* ── Render: Executive ── */
 function opdRenderExecutive(){
   const M=OPD.M;
-  const desc=fmtDate(M.t0)+' – '+fmtDate(M.tn)+' · '+M.D+' Tage · '+OPD.db.rows.length.toLocaleString()+' Messwerte';
   document.getElementById('exec-title').textContent='Executive Summary · '+OPD.db.sn;
-  document.getElementById('exec-desc').textContent=desc;
-  document.getElementById('exec-kpi').innerHTML=[
-    opdKpiCard('AC Input gesamt',fmtN(M.acKwh,1),'kWh','Meterstand-Delta','accent'),
-    opdKpiCard('DC Output gesamt',fmtN(M.dcKwh,1),'kWh','Gun 1 + Gun 2'),
-    opdKpiCard('Wirkungsgrad',fmtPct(M.efficiency),'','DC ÷ AC','green'),
-    opdKpiCard('Sessions gesamt',M.sessionCount.toString(),'','Gun 1 + Gun 2','accent'),
-    opdKpiCard('Sessions / Tag',fmtN(M.sessPerDay,1),'','Tagesdurchschnitt'),
-    opdKpiCard('Connection Time Util.',fmtPct(M.connTimeUtil),'','Ladezeit ÷ Scope'),
-    opdKpiCard('Ø Battery SoC',fmtN(M.batSocAvg,1),'%','Scope-Durchschnitt','','true'),
-    opdKpiCard('Peak AC-Leistung',fmtN(M.peakAc,1),'kW','Maximalleistung','orange'),
+  document.getElementById('exec-desc').textContent=fmtDate(M.t0)+' – '+fmtDate(M.tn)+' · '+M.D+' days · '+OPD.db.rows.length.toLocaleString('de-DE')+' data points';
+  document.getElementById('exec-kpi-energy').innerHTML=[
+    opdK('AC Input',fmtN(M.acKwh,1),'kWh','Total grid input','accent'),
+    opdK('Total DC Output',fmtN(M.dcKwh,1),'kWh','Delivered to vehicles'),
+    opdK('Efficiency',fmtPct(M.efficiency),'','DC delivered ÷ AC input','green'),
+    opdK('Peak Power',fmtN(M.peakAc,1),'kW','Highest AC power in period','orange'),
+  ].join('');
+  document.getElementById('exec-kpi-sessions').innerHTML=[
+    opdK('Sessions',M.sessionCount.toString(),'','Detected charging sessions','accent'),
+    opdK('Avg Sessions / Day',fmtN(M.sessPerDay,1),'','Daily average'),
+    opdK('Avg Energy / Session',fmtN(M.sessAvgKwh,1),'kWh','Mean per session'),
+    opdK('Avg Duration / Session',fmtDur(M.sessAvgDur),'','Active charging time'),
+  ].join('');
+  document.getElementById('exec-kpi-util').innerHTML=[
+    opdK('Connector Time Util.',fmtPct(M.connTimeUtil),'','Share of active connector-minutes','accent'),
+    opdK('DC Energy Util.',fmtPct(M.dcEnergyUtil),'','vs. (240+peak)×2×scope h'),
+    opdK('AC Time Util.',fmtPct(M.acTimeUtil),'','Minutes with AC input'),
+    opdK('Scope Hours',fmtN(M.scopeHours,1),'h',M.D+' days · '+M.scopeMin.toLocaleString('de-DE')+' min'),
+  ].join('');
+  document.getElementById('exec-kpi-battery').innerHTML=[
+    opdK('Avg Battery SoC',fmtN(M.batSocAvg,1),'%',fmtN(M.batSocMin,0)+' – '+fmtN(M.batSocMax,0)+' % range','dark'),
+    opdK('Battery Throughput',fmtN(M.batThroughput,1),'kWh','Discharged from storage','dark'),
+    opdK('Idle',fmtPct(M.idleMin/(M.idleMin+M.singleMin+M.parallelMin)),'','Minutes without active charging','dark'),
   ].join('');
 }
 
 /* ── Render: Energy ── */
 function opdRenderEnergy(){
   const M=OPD.M;
-  document.getElementById('energy-title').textContent='Energy Analysis · '+OPD.db.sn;
-  document.getElementById('energy-desc').textContent=fmtDate(M.t0)+' – '+fmtDate(M.tn);
   document.getElementById('opd-kpi-energy').innerHTML=[
-    opdKpiCard('AC Input gesamt',fmtN(M.acKwh,1),'kWh','Meterstand-Delta (exakt)','accent'),
-    opdKpiCard('DC Output gesamt',fmtN(M.dcKwh,1),'kWh','Gun 1 + Gun 2 Meterstand'),
-    opdKpiCard('Wirkungsgrad',fmtPct(M.efficiency),'','DC kWh ÷ AC kWh','green'),
-    opdKpiCard('Peak AC-Leistung',fmtN(M.peakAc,1),'kW','Maximalleistung im Scope','orange'),
+    opdK('AC Input',fmtN(M.acKwh,1),'kWh','Meter delta (exact)','accent'),
+    opdK('DC Output',fmtN(M.dcKwh,1),'kWh','Gun 1 + Gun 2 meter'),
+    opdK('Efficiency',fmtPct(M.efficiency),'','DC kWh ÷ AC kWh','green'),
+    opdK('Peak AC Power',fmtN(M.peakAc,1),'kW','Max in scope','orange'),
+    opdK('DC · Gun 1',fmtN(M.g1Kwh,1),'kWh','Charging point 1'),
+    opdK('DC · Gun 2',fmtN(M.g2Kwh,1),'kWh','Charging point 2'),
   ].join('');
   opdMkChart('opd-c-hourly','bar',{
     labels:Array.from({length:24},(_,i)=>String(i).padStart(2,'0')),
     datasets:[{label:'Ø AC kW',data:M.hourlyAvg,
-      backgroundColor:M.hourlyAvg.map(v=>v>M.peakAc*.5?P.red+'cc':P.orange+'88'),
-      borderRadius:4,borderSkipped:false}]
+      backgroundColor:M.hourlyAvg.map(v=>v>M.peakAc*.5?P.red+'cc':P.orange+'88'),borderRadius:4,borderSkipped:false}]
   },{});
   opdMkChart('opd-c-split','doughnut',{
     labels:['Gun 1','Gun 2'],
@@ -663,7 +784,7 @@ function opdRenderEnergy(){
     plugins:{legend:{display:true,position:'right',labels:{color:'#6B6B76',font:{size:10},boxWidth:10,padding:10}}}});
   opdMkChart('opd-c-daily','bar',{
     labels:M.days.map(d=>d.slice(5)),
-    datasets:[{label:'AC kWh/Tag',data:M.dayAcKwh,backgroundColor:P.red+'99',borderRadius:4,borderSkipped:false}]
+    datasets:[{label:'AC kWh/day',data:M.dayAcKwh,backgroundColor:P.red+'99',borderRadius:4,borderSkipped:false}]
   },{});
 }
 
@@ -671,11 +792,11 @@ function opdRenderEnergy(){
 function opdRenderSessions(){
   const M=OPD.M;
   document.getElementById('opd-kpi-sessions').innerHTML=[
-    opdKpiCard('Sessions gesamt',M.sessionCount.toString(),'','Erkannte Ladesessions (≥2 min)','accent'),
-    opdKpiCard('Sessions / Tag',fmtN(M.sessPerDay,1),'','Ø Tages-Sessions'),
-    opdKpiCard('Ø Energie / Session',fmtN(M.sessAvgKwh,1),'kWh','Durchschnitt'),
-    opdKpiCard('Median Energie',fmtN(M.sessMedianKwh,1),'kWh','50. Perzentil'),
-    opdKpiCard('Ø Dauer / Session',fmtDur(M.sessAvgDur),'','Aktive Ladezeit'),
+    opdK('Sessions',M.sessionCount.toString(),'','Detected (≥2 min)','accent'),
+    opdK('Avg Sessions / Day',fmtN(M.sessPerDay,1),'','Daily average'),
+    opdK('Avg Energy / Session',fmtN(M.sessAvgKwh,1),'kWh','Mean'),
+    opdK('Median Energy',fmtN(M.sessMedianKwh,1),'kWh','50th percentile'),
+    opdK('Avg Duration',fmtDur(M.sessAvgDur),'','Active charging time'),
   ].join('');
   const bkts=[0,10,20,30,40,50,60,70,80,90,100];
   const hist=Array(bkts.length-1).fill(0);
@@ -686,7 +807,7 @@ function opdRenderSessions(){
   },{});
   opdMkChart('opd-c-sesday','bar',{
     labels:M.days.map(d=>d.slice(5)),
-    datasets:[{label:'Sessions/Tag',data:M.daySessionCounts,backgroundColor:P.red+'99',borderRadius:4,borderSkipped:false}]
+    datasets:[{label:'Sessions/day',data:M.daySessionCounts,backgroundColor:P.red+'99',borderRadius:4,borderSkipped:false}]
   },{});
 }
 
@@ -694,20 +815,20 @@ function opdRenderSessions(){
 function opdRenderUtil(){
   const M=OPD.M;
   document.getElementById('opd-kpi-util').innerHTML=[
-    opdKpiCard('Connection Time Util.',fmtPct(M.connTimeUtil),'','Ladezeit ÷ Scope-Zeit','accent'),
-    opdKpiCard('DC Energy Utilization',fmtPct(M.dcEnergyUtil),'','DC kWh ÷ theoret. Maximum'),
-    opdKpiCard('AC Time Utilization',fmtPct(M.acTimeUtil),'','AC aktiv (>1 kW) ÷ Scope-Zeit'),
-    opdKpiCard('Scope-Stunden',fmtN(M.scopeHours,1),'h',M.D+' Tage · '+M.scopeMin.toLocaleString()+' min'),
+    opdK('Connection Time Util.',fmtPct(M.connTimeUtil),'','Charging time ÷ scope time','accent'),
+    opdK('DC Energy Util.',fmtPct(M.dcEnergyUtil),'','DC kWh ÷ theoretical maximum'),
+    opdK('AC Time Util.',fmtPct(M.acTimeUtil),'','AC active (>1 kW) ÷ scope'),
+    opdK('Scope Hours',fmtN(M.scopeHours,1),'h',M.D+' days · '+M.scopeMin.toLocaleString('de-DE')+' min'),
   ].join('');
   const bench=(240+M.peakAc)*2*M.scopeHours;
   document.getElementById('opd-util-basis').innerHTML=`
-    <b>DC Energy Benchmark</b> = (240 kW + Peak-AC) × nGuns × Scope-Stunden<br>
+    <b>DC Energy Benchmark</b> = (240 kW + Peak AC) × 2 guns × scope hours<br>
     = (240 + ${fmtN(M.peakAc,1)}) × 2 × ${fmtN(M.scopeHours,1)} h = <b>${fmtN(bench,0)} kWh</b><br>
     DC Output: <b>${fmtN(M.dcKwh,1)} kWh</b> → DC Energy Utilization: <b>${fmtPct(M.dcEnergyUtil)}</b><br><br>
-    <b>Connection Time Utilization</b> = Aktive Ladezeit ÷ Scope-Zeit<br>
-    = ${(M.singleMin+M.parallelMin).toLocaleString()} min ÷ ${M.scopeMin.toLocaleString()} min = <b>${fmtPct(M.connTimeUtil)}</b><br><br>
-    <b>Session-Erkennung:</b> kW &gt; 0,5 oder Status = "Charging" · Mindest-Laufzeit: 2 Minuten<br>
-    <b>Energie-Berechnung:</b> Meterstand-Delta (last − first non-null reading) für maximale Genauigkeit
+    <b>Connection Time Utilization</b> = Active charging time ÷ scope time<br>
+    = ${(M.singleMin+M.parallelMin).toLocaleString('de-DE')} min ÷ ${M.scopeMin.toLocaleString('de-DE')} min = <b>${fmtPct(M.connTimeUtil)}</b><br><br>
+    <b>Session detection:</b> kW &gt; 0.5 or status = "Charging" · minimum duration: 2 minutes<br>
+    <b>Energy calculation:</b> Meter delta (last − first non-null reading) for maximum accuracy
   `;
 }
 
@@ -715,18 +836,17 @@ function opdRenderUtil(){
 function opdRenderBattery(){
   const M=OPD.M;
   document.getElementById('opd-kpi-bat').innerHTML=[
-    opdKpiCard('Ø Battery SoC',fmtN(M.batSocAvg,1),'%','Scope-Durchschnitt (alle bat_soc > 0)','',true),
-    opdKpiCard('SoC Bereich',fmtN(M.batSocMin,0)+' – '+fmtN(M.batSocMax,0),'%','Min – Max im Scope','',true),
-    opdKpiCard('Battery Throughput',fmtN(M.batThroughput,1),'kWh','Entladung (bat_kw < 0) kumuliert','',true),
-    opdKpiCard('Battery Charging',fmtN(M.batCharging,1),'kWh','Ladung aus Netz/PV (bat_kw > 0)','',true),
+    opdK('Avg Battery SoC',fmtN(M.batSocAvg,1),'%','Scope average (all bat_soc > 0)','dark'),
+    opdK('SoC Range',fmtN(M.batSocMin,0)+' – '+fmtN(M.batSocMax,0),'%','Min – Max in scope','dark'),
+    opdK('Battery Throughput',fmtN(M.batThroughput,1),'kWh','Discharged from storage','dark'),
+    opdK('Battery Charging',fmtN(M.batCharging,1),'kWh','Charged from grid/PV (bat_kw > 0)','dark'),
   ].join('');
 }
 
 /* ── Render: Operating Mode ── */
 function opdRenderMode(){
   const M=OPD.M;
-  const total=M.idleMin+M.singleMin+M.parallelMin;
-  const pmax=Math.max(M.idleMin,M.singleMin,M.parallelMin,1);
+  const total=M.idleMin+M.singleMin+M.parallelMin,pmax=Math.max(M.idleMin,M.singleMin,M.parallelMin,1);
   document.getElementById('opd-mode-bars').innerHTML=[
     ['Idle',M.idleMin,'var(--n300)'],
     ['Single Charging',M.singleMin,'var(--elmi-red)'],
@@ -748,20 +868,21 @@ function opdRenderMode(){
 /* ── Render: SoC per Day ── */
 function opdRenderSocDays(){
   const M=OPD.M;
-  const btns=document.getElementById('opd-day-btns');
-  btns.innerHTML=M.days.map((d,i)=>
-    `<button class="btn${i===0?' btn-primary':''}" style="font-size:11px" onclick="opdShowSocDay(${i})">${d.slice(5)}</button>`
-  ).join('');
-  opdShowSocDay(0);
+  const sel=document.getElementById('opd-day-sel');
+  sel.innerHTML=M.days.map((d,i)=>`<option value="${i}">${d}</option>`).join('');
+  /* SoC summary KPIs */
+  document.getElementById('opd-kpi-soc').innerHTML=[
+    opdK('SoC Min',fmtN(M.batSocMin,0),'%','Lowest reading in period','dark'),
+    opdK('SoC Avg',fmtN(M.batSocAvg,1),'%','Mean over all minutes','dark'),
+    opdK('SoC Max',fmtN(M.batSocMax,0),'%','Highest reading in period','dark'),
+  ].join('');
+  opdShowSocDay('0');
 }
 
-function opdShowSocDay(idx){
-  OPD.activeDay=idx;
-  const M=OPD.M;
-  const dk=M.days[idx];
-  document.getElementById('opd-soc-title').textContent='SoC & Ladeleistung · '+dk;
-  const allBtns=document.getElementById('opd-day-btns').children;
-  for(let i=0;i<allBtns.length;i++) allBtns[i].classList.toggle('btn-primary',i===idx);
+function opdShowSocDay(idxStr){
+  const idx=parseInt(idxStr)||0;
+  const M=OPD.M,dk=M.days[idx];
+  document.getElementById('opd-soc-title').textContent='Battery SoC & Power · '+dk;
   function rowDayKey(r){const d=new Date(r.t);return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;}
   const dayRows=OPD.db.rows.filter(r=>rowDayKey(r)===dk);
   if(!dayRows.length)return;
