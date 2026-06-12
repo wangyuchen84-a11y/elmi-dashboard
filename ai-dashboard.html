@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     /* ── Design System (1:1 aus cpo.html extrahiert) ── */
     :root {
@@ -611,6 +612,44 @@
     /* ── Page fade-in ── */
     .page.active { animation: pFade .22s ease; }
     @keyframes pFade { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
+
+    /* ════════════════════════════════
+       OPD TABS  (cpo.html style)
+    ════════════════════════════════ */
+    .tab-bar {
+      display: flex; gap: 0;
+      background: var(--bg1);
+      border-bottom: 1px solid var(--border1);
+      padding: 0 24px;
+      overflow-x: auto;
+    }
+    .tab-bar::-webkit-scrollbar { height: 0; }
+    .tab-btn {
+      padding: 0 16px; height: 40px;
+      border: none; border-bottom: 2px solid transparent;
+      background: none; font-family: var(--font);
+      font-size: 12px; font-weight: 600;
+      color: var(--fg3); cursor: pointer;
+      transition: color .15s, border-color .15s;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .tab-btn:hover { color: var(--fg1); }
+    .tab-btn.active { color: var(--elmi-red); border-bottom-color: var(--elmi-red); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* OPD empty state */
+    .opd-empty {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      min-height: 60vh; gap: 16px;
+      text-align: center;
+    }
+    .opd-empty-icon { font-size: 48px; opacity: .6; }
+    .opd-empty-title { font-size: 22px; font-weight: 800; color: var(--fg1); letter-spacing: -.4px; }
+    .opd-empty-desc { font-size: 13px; color: var(--fg2); max-width: 480px; line-height: 1.6; }
+    .opd-empty-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+    .opd-empty-fmt { font-size: 11px; color: var(--fg3); max-width: 560px; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -711,210 +750,145 @@
          P1 · OPERATING PERFORMANCE
     ══════════════════════════════ -->
     <div class="page active" id="p1">
+      <!-- Topbar -->
       <div class="page-topbar">
-        <div class="page-topbar-breadcrumb">PAGE 01 · <span>OPERATIONS</span></div>
+        <div class="page-topbar-breadcrumb">PAGE 01 · <span>OPERATING PERFORMANCE</span></div>
         <div class="page-topbar-spacer"></div>
         <div class="page-topbar-actions">
-          <span style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--c5)">
-            <span class="dot green pulse"></span> Live · Juni 2026
-          </span>
-          <button class="btn btn-primary">↻ Refresh</button>
+          <span id="opd-status" style="font-size:11px;font-weight:600;color:var(--fg3)">Keine Daten geladen</span>
+          <button class="btn" onclick="opdLoadDemo()">📂 Demo-Daten</button>
+          <button class="btn btn-primary" onclick="document.getElementById('opdFile').click()">↑ Excel hochladen</button>
+          <input type="file" id="opdFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="opdUploadFile(this)">
         </div>
       </div>
 
-      <div class="page-content">
-        <div class="page-header">
-          <div class="page-title">Operating Performance Dashboard</div>
-          <div class="page-desc">Echtzeit-Überblick aller ELMI-Standorte und Energieflüsse. Daten aus allen 24 Ladestandorten.</div>
-        </div>
-
-        <!-- KPI Row 1 -->
-        <div class="section-label">Energy & Power</div>
-        <div class="kpi-grid" style="margin-bottom:12px">
-          <div class="kpi-card">
-            <div class="kpi-label"><span class="kpi-label-dot"></span>AC Input</div>
-            <div class="kpi-value accent">4.200<span class="kpi-unit">kW</span></div>
-            <div class="kpi-sub">Gesamt-Ladeleistung aktiv</div>
-            <div class="kpi-delta up">▲ +12 % vs. Vorwoche</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label"><span class="kpi-label-dot" style="background:var(--elmi-orange)"></span>PV-Erzeugung</div>
-            <div class="kpi-value orange">18.7<span class="kpi-unit">MWh</span></div>
-            <div class="kpi-sub">Heute gesamt</div>
-            <div class="kpi-delta up">▲ +8 % vs. Vortag</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label"><span class="kpi-label-dot"></span>DC Output</div>
-            <div class="kpi-value">9.295<span class="kpi-unit">kWh</span></div>
-            <div class="kpi-sub">An Fahrzeuge geliefert</div>
-            <div class="kpi-delta up">▲ +5.2 %</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label"><span class="kpi-label-dot" style="background:var(--c5)"></span>Efficiency</div>
-            <div class="kpi-value green">90.3<span class="kpi-unit">%</span></div>
-            <div class="kpi-sub">DC Output ÷ AC Input</div>
-          </div>
-        </div>
-
-        <!-- KPI Row 2 -->
-        <div class="section-label">Sessions & Standorte</div>
-        <div class="kpi-grid" style="margin-bottom:20px">
-          <div class="kpi-card">
-            <div class="kpi-label"><span class="kpi-label-dot"></span>Sessions</div>
-            <div class="kpi-value accent">242</div>
-            <div class="kpi-sub">Erkannte Ladesessions</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label"><span class="kpi-label-dot" style="background:var(--c4)"></span>Aktive Sessions</div>
-            <div class="kpi-value blue">47<span class="kpi-unit">x</span></div>
-            <div class="kpi-sub">Jetzt gerade</div>
-            <div class="kpi-delta up">▲ +3</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label"><span class="kpi-label-dot"></span>Ø Energie / Session</div>
-            <div class="kpi-value">36.8<span class="kpi-unit">kWh</span></div>
-            <div class="kpi-sub">Median 38.5 kWh</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label"><span class="kpi-label-dot"></span>Standorte online</div>
-            <div class="kpi-value">23<span class="kpi-unit">/24</span></div>
-            <div class="kpi-sub">1 in Wartung</div>
-            <div class="kpi-delta down">▼ Köln-West</div>
-          </div>
-        </div>
-
-        <!-- Dark KPI strip (Battery & Hardware style) -->
-        <div class="section-label">Battery & Storage</div>
-        <div class="kpi-grid" style="margin-bottom:20px">
-          <div class="kpi-card dark">
-            <div class="kpi-label"><span class="kpi-label-dot"></span>Ø Battery SoC</div>
-            <div class="kpi-value">82<span class="kpi-unit">%</span></div>
-            <div class="kpi-sub">45–100 % Bereich</div>
-          </div>
-          <div class="kpi-card dark">
-            <div class="kpi-label"><span class="kpi-label-dot"></span>Battery Throughput</div>
-            <div class="kpi-value">2.843<span class="kpi-unit">kWh</span></div>
-            <div class="kpi-sub">Entladen aus Speicher</div>
-          </div>
-          <div class="kpi-card dark">
-            <div class="kpi-label"><span class="kpi-label-dot"></span>Eigennutzungsquote</div>
-            <div class="kpi-value">74<span class="kpi-unit">%</span></div>
-            <div class="kpi-sub">PV direkt genutzt</div>
-          </div>
-          <div class="kpi-card dark">
-            <div class="kpi-label"><span class="kpi-label-dot"></span>CO₂ Einsparung MTD</div>
-            <div class="kpi-value">6.2<span class="kpi-unit">t</span></div>
-            <div class="kpi-sub">Monat aktuell</div>
-          </div>
-        </div>
-
-        <!-- AI Insight -->
-        <div class="ai-insight" style="margin-bottom:20px">
-          <div class="ai-insight-icon">🤖</div>
-          <div>
-            <div class="ai-insight-label">AI Insight</div>
-            <div class="ai-insight-text">Heute 14–16 Uhr Spitzenlast erwartet (+22 % vs. Ø). München-Ost EVSE #3 zeigt Anomalie-Muster — Wartung empfohlen. Peak-Shaving-Optimierung: ~€180/Tag Einsparungspotenzial.</div>
-          </div>
-        </div>
-
-        <!-- Energy Flow -->
-        <div class="section-label">Energy Flow</div>
-        <div class="flow-grid" style="margin-bottom:20px">
-          <div class="flow-node active">
-            <div class="flow-icon">☀️</div>
-            <div class="flow-label">PV Solar</div>
-            <div class="flow-value">2.4 MW</div>
-            <div class="flow-sub">18.7 MWh heute</div>
-          </div>
-          <div class="flow-node">
-            <div class="flow-icon">🔋</div>
-            <div class="flow-label">Batterie</div>
-            <div class="flow-value">82 %</div>
-            <div class="flow-sub">Entladen 0.3 MW</div>
-          </div>
-          <div class="flow-node active">
-            <div class="flow-icon">🏭</div>
-            <div class="flow-label">Netz</div>
-            <div class="flow-value">1.8 MW</div>
-            <div class="flow-sub">Bezug 1.5 MW</div>
-          </div>
-          <div class="flow-node active">
-            <div class="flow-icon">🔌</div>
-            <div class="flow-label">E-Ladung</div>
-            <div class="flow-value">4.2 MW</div>
-            <div class="flow-sub">47 Sessions</div>
-          </div>
-          <div class="flow-node">
-            <div class="flow-icon">🏢</div>
-            <div class="flow-label">Gebäude</div>
-            <div class="flow-value">0.5 MW</div>
-            <div class="flow-sub">HVAC + Licht</div>
-          </div>
-          <div class="flow-node">
-            <div class="flow-icon">↗️</div>
-            <div class="flow-label">Einspeisung</div>
-            <div class="flow-value">0.4 MW</div>
-            <div class="flow-sub">€ 0.082/kWh</div>
-          </div>
-        </div>
-
-        <!-- Charts row -->
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-header">
-              <div><div class="card-title">Battery SoC & Ladeleistung</div><div class="card-sub">1-Min-Auflösung · heute</div></div>
-              <span class="pill green">Live</span>
-            </div>
-            <div class="chart-wrap"><canvas id="c1p1"></canvas></div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <div><div class="card-title">DC Output Source Split</div><div class="card-sub">Grid-direkt vs. Battery Storage</div></div>
-            </div>
-            <div class="chart-wrap"><canvas id="c2p1"></canvas></div>
-          </div>
-        </div>
-
-        <!-- Operating Mode (cpo.html style) + Standort -->
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-header">
-              <div><div class="card-title">Operating Mode</div><div class="card-sub">Verteilung der Messzeitpunkte</div></div>
-            </div>
-            <div class="mode-row">
-              <span class="mode-name">Idle</span>
-              <div class="mode-bar-wrap"><div class="mode-bar" style="width:82%;background:var(--border2)"></div></div>
-              <span class="mode-val">622 h 55 min</span>
-            </div>
-            <div class="mode-row">
-              <span class="mode-name">Single Charging</span>
-              <div class="mode-bar-wrap"><div class="mode-bar" style="width:16%;background:var(--elmi-red)"></div></div>
-              <span class="mode-val">121 h 25 min</span>
-            </div>
-            <div class="mode-row">
-              <span class="mode-name">Parallel Charging</span>
-              <div class="mode-bar-wrap"><div class="mode-bar" style="width:2%;background:var(--elmi-purple)"></div></div>
-              <span class="mode-val">12 h 19 min</span>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header"><div class="card-title">Standort-Status</div></div>
-            <div class="site-list">
-              <div class="site-row"><span class="dot green pulse"></span><span class="site-name">München-Ost</span><div class="bar-wrap"><div class="bar" style="width:82%"></div></div><span class="site-val">0.82 MW</span></div>
-              <div class="site-row"><span class="dot green pulse"></span><span class="site-name">Stuttgart-Mitte</span><div class="bar-wrap"><div class="bar" style="width:71%"></div></div><span class="site-val">0.71 MW</span></div>
-              <div class="site-row"><span class="dot green pulse"></span><span class="site-name">Hamburg-Nord</span><div class="bar-wrap"><div class="bar" style="width:65%"></div></div><span class="site-val">0.65 MW</span></div>
-              <div class="site-row"><span class="dot green pulse"></span><span class="site-name">Berlin-Tempelhof</span><div class="bar-wrap"><div class="bar" style="width:58%"></div></div><span class="site-val">0.58 MW</span></div>
-              <div class="site-row"><span class="dot amber"></span><span class="site-name">Frankfurt-Süd</span><div class="bar-wrap"><div class="bar" style="width:31%;background:var(--c7)"></div></div><span class="site-val">0.31 MW</span></div>
-              <div class="site-row"><span class="dot red"></span><span class="site-name">Köln-West</span><div class="bar-wrap"><div class="bar" style="width:0%"></div></div><span class="site-val" style="color:var(--elmi-red)">Wartung</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:16px">
-          <div class="card-header"><div><div class="card-title">Monatsumsatz 2026</div><div class="card-sub">Akkumulierter Umsatz (T€) · Ist vs. Plan</div></div></div>
-          <div class="chart-wrap"><canvas id="c3p1"></canvas></div>
-        </div>
+      <!-- Tab bar (hidden until data loaded) -->
+      <div class="tab-bar" id="opd-tabs" style="display:none">
+        <button class="tab-btn active" onclick="opdTab('energy')">⚡ Energy</button>
+        <button class="tab-btn" onclick="opdTab('sessions')">🔌 Sessions</button>
+        <button class="tab-btn" onclick="opdTab('utilization')">📊 Utilization</button>
+        <button class="tab-btn" onclick="opdTab('battery')">🔋 Battery</button>
+        <button class="tab-btn" onclick="opdTab('mode')">📅 Operating Mode</button>
+        <button class="tab-btn" onclick="opdTab('soc')">📈 SoC per Day</button>
       </div>
+
+      <!-- Empty state -->
+      <div id="opd-empty" class="page-content opd-empty">
+        <div class="opd-empty-icon">📊</div>
+        <div class="opd-empty-title">Operating Performance Dashboard</div>
+        <div class="opd-empty-desc">Gleiche Datenstruktur wie der CPO-Analyzer. Excel-Datei hochladen oder Demo-Datensatz (7 Tage, 10.080 Minuten Auflösung) laden.</div>
+        <div class="opd-empty-btns">
+          <button class="btn" style="height:44px;padding:0 24px;font-size:13px" onclick="opdLoadDemo()">📂 Demo-Daten laden</button>
+          <button class="btn btn-primary" style="height:44px;padding:0 24px;font-size:13px" onclick="document.getElementById('opdFile').click()">↑ Excel hochladen</button>
+        </div>
+        <div class="opd-empty-fmt">Format: SN · Timestamp · AC kWh · AC kW · Battery SoC · Battery kW · Gun1 Meter · Gun1 SoC · Gun1 kW · Gun1 Status · Gun2 Meter · Gun2 SoC · Gun2 kW · Gun2 Status</div>
+      </div>
+
+      <!-- Data view -->
+      <div id="opd-data" style="display:none">
+
+        <!-- Tab: Energy -->
+        <div class="tab-panel active page-content" id="opd-tab-energy">
+          <div class="page-header">
+            <div class="page-title" id="opd-title">Operating Performance Dashboard</div>
+            <div class="page-desc" id="opd-desc">Laden Sie Daten, um die Analyse zu starten.</div>
+          </div>
+          <div class="section-label">Energy KPIs</div>
+          <div class="kpi-grid" style="margin-bottom:16px" id="opd-kpi-energy"></div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><div><div class="card-title">AC Power · Stündlicher Verlauf</div><div class="card-sub">Ø kW pro Stunde (alle Tage)</div></div></div>
+              <div class="chart-wrap"><canvas id="opd-c-hourly"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div><div class="card-title">DC Source Split</div><div class="card-sub">Gun 1 vs. Gun 2 Energieanteil</div></div></div>
+              <div class="chart-wrap"><canvas id="opd-c-split"></canvas></div>
+            </div>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <div class="card-header"><div><div class="card-title">Energie pro Tag</div><div class="card-sub">AC Input (kWh) nach Tag · Meterstand-Delta</div></div></div>
+            <div class="chart-wrap" style="max-height:160px"><canvas id="opd-c-daily"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Tab: Sessions -->
+        <div class="tab-panel page-content" id="opd-tab-sessions">
+          <div class="page-header">
+            <div class="page-title">Session-Analyse</div>
+            <div class="page-desc">Erkennung: AC-Leistung &gt; 0,5 kW oder Status = Charging · Mindestdauer: 2 Minuten</div>
+          </div>
+          <div class="section-label">Session KPIs</div>
+          <div class="kpi-grid" style="margin-bottom:16px" id="opd-kpi-sessions"></div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><div><div class="card-title">Session-Energie Histogramm</div><div class="card-sub">kWh pro Session</div></div></div>
+              <div class="chart-wrap"><canvas id="opd-c-seshist"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div><div class="card-title">Sessions pro Tag</div><div class="card-sub">Gun 1 + Gun 2 kombiniert</div></div></div>
+              <div class="chart-wrap"><canvas id="opd-c-sesday"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Utilization -->
+        <div class="tab-panel page-content" id="opd-tab-utilization">
+          <div class="page-header">
+            <div class="page-title">Utilization Analysis</div>
+            <div class="page-desc">Auslastungsmetriken auf Basis von Meterstand-Deltas und Benchmark-Berechnung</div>
+          </div>
+          <div class="section-label">Utilization KPIs</div>
+          <div class="kpi-grid" style="margin-bottom:16px" id="opd-kpi-util"></div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header"><div class="card-title">Berechnungsgrundlage</div></div>
+            <div id="opd-util-basis" style="font-size:12px;color:var(--fg2);line-height:2.2"></div>
+          </div>
+        </div>
+
+        <!-- Tab: Battery -->
+        <div class="tab-panel page-content" id="opd-tab-battery">
+          <div class="page-header">
+            <div class="page-title">Battery Analyse</div>
+            <div class="page-desc">Speicherkennzahlen aus bat_soc und bat_kw Messwerten</div>
+          </div>
+          <div class="section-label">Battery KPIs</div>
+          <div class="kpi-grid" style="margin-bottom:16px" id="opd-kpi-bat"></div>
+        </div>
+
+        <!-- Tab: Operating Mode -->
+        <div class="tab-panel page-content" id="opd-tab-mode">
+          <div class="page-header">
+            <div class="page-title">Operating Mode</div>
+            <div class="page-desc">Verteilung der Betriebszustände über den gesamten Analysezeitraum</div>
+          </div>
+          <div class="section-label">Betriebsmodus-Verteilung</div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><div><div class="card-title">Betriebsmodus</div><div class="card-sub">Dauer in Minuten und Anteil an Scope-Zeit</div></div></div>
+              <div id="opd-mode-bars"></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div><div class="card-title">Modus-Verteilung</div><div class="card-sub">Anteil Idle · Single · Parallel</div></div></div>
+              <div class="chart-wrap"><canvas id="opd-c-mode"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: SoC per Day -->
+        <div class="tab-panel page-content" id="opd-tab-soc">
+          <div class="page-header">
+            <div class="page-title">Battery SoC per Day</div>
+            <div class="page-desc">1-Minuten-Auflösung · SoC + AC-Leistung + Gun-Leistungen</div>
+          </div>
+          <div class="section-label">Tagesauswahl</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="opd-day-btns"></div>
+          <div class="card">
+            <div class="card-header"><div><div class="card-title" id="opd-soc-title">SoC & Ladeleistung</div><div class="card-sub">Purple: Battery SoC · Orange: AC kW · Gestrichelt: Gun 1/2 kW</div></div></div>
+            <div class="chart-wrap" style="max-height:220px"><canvas id="opd-c-soc"></canvas></div>
+          </div>
+        </div>
+
+      </div><!-- /opd-data -->
     </div><!-- /p1 -->
 
     <!-- ══════════════════════════════
@@ -1564,42 +1538,461 @@ function initPageCharts(page){
   ({p1:initP1,p2:initP2,p3:initP3,p4:initP4,p5:initP5,p6:initP6,p7:initP7}[page]||function(){})();
 }
 
-/* ── P1 ── */
-function initP1(){
-  // Battery SoC area + power line (purple area + orange line like cpo.html)
-  mk('c1p1','line',{
-    labels:h24,
+/* ── P1 – stub (OPD engine handles everything) ── */
+function initP1(){ /* no-op: OPD renders on data load */ }
+
+/* ══════════════════════════════════════════════════════
+   OPD · Operating Performance Dashboard Engine
+   Mirrors cpo.html compute logic exactly
+══════════════════════════════════════════════════════ */
+const OPD = { db: null, M: null, charts: {}, activeDay: 0 };
+
+/* ── Tab navigation ── */
+function opdTab(t) {
+  document.querySelectorAll('#opd-tabs .tab-btn').forEach(b => {
+    const matches = b.getAttribute('onclick').includes("'"+t+"'");
+    b.classList.toggle('active', matches);
+  });
+  document.querySelectorAll('#opd-data .tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('opd-tab-'+t).classList.add('active');
+}
+
+/* ── Load demo data ── */
+function opdLoadDemo() {
+  if (!window.OPD_DEMO) { alert('Demo-Daten nicht gefunden. Seite neu laden.'); return; }
+  const rows = opdDecodeDemo(window.OPD_DEMO);
+  OPD.db = { sn: window.OPD_DEMO.sn, rows };
+  opdRun();
+}
+
+/* ── Decode compact RLE+sparse demo format ── */
+function opdDecodeDemo(d) {
+  const ST = ['Available','Charging','Finishing','Preparing','Starting'];
+  const n = d.n;
+  function decRLE(rle, scale) {
+    const out = new Float32Array(n);
+    let idx=0, ri=0;
+    while (ri < rle.length) { const cnt=rle[ri++], val=rle[ri++]; for(let j=0;j<cnt;j++) out[idx++]=val/scale; }
+    return out;
+  }
+  function decSparse(sparse, base0) {
+    const lut = new Float32Array(n);
+    for (let i=0; i<sparse.length; i+=2) lut[sparse[i]] = sparse[i+1]/100;
+    const out = new Float32Array(n);
+    let cum = base0;
+    for (let i=0; i<n; i++) { cum += lut[i]; out[i] = cum; }
+    return out;
+  }
+  const ac_kw=decRLE(d.ac_kw,10), bat_soc=decRLE(d.bat_soc,1), bat_kw=decRLE(d.bat_kw,10);
+  const g1_kw=decRLE(d.g1_kw,10), g1_soc=decRLE(d.g1_soc,1), g1_si=decRLE(d.g1_st,1);
+  const g2_kw=decRLE(d.g2_kw,10), g2_soc=decRLE(d.g2_soc,1), g2_si=decRLE(d.g2_st,1);
+  const ac_kwh=decSparse(d.ac_d, d.ac_kwh0/100);
+  const g1_kwh=decSparse(d.g1_d, d.g1_kwh0/100);
+  const g2_kwh=decSparse(d.g2_d, d.g2_kwh0/100);
+  const rows = [];
+  for (let i=0; i<n; i++) rows.push({
+    t: d.t0 + i*60000,
+    ac_kwh: ac_kwh[i], ac_kw: ac_kw[i],
+    bat_soc: bat_soc[i], bat_kw: bat_kw[i],
+    g1_kwh: g1_kwh[i], g1_kw: g1_kw[i], g1_soc: g1_soc[i], g1_st: ST[Math.round(g1_si[i])],
+    g2_kwh: g2_kwh[i], g2_kw: g2_kw[i], g2_soc: g2_soc[i], g2_st: ST[Math.round(g2_si[i])]
+  });
+  return rows;
+}
+
+/* ── Excel upload ── */
+function opdUploadFile(inp) {
+  const f = inp.files[0]; if (!f) return;
+  const rdr = new FileReader();
+  rdr.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+      const rows = opdParseRows(raw);
+      if (!rows || rows.length < 10) { alert('Zu wenige Datenzeilen. Bitte Format prüfen.'); return; }
+      OPD.db = { sn: rows[0]?.sn || 'Upload', rows };
+      opdRun();
+    } catch(e) { alert('Fehler: '+e.message); }
+  };
+  rdr.readAsArrayBuffer(f);
+  inp.value = '';
+}
+
+/* ── Parse Excel rows (same column logic as cpo.html) ── */
+function opdParseRows(raw) {
+  if (!raw || raw.length < 2) return [];
+  const hdr = (raw[0]||[]).map(h => (h+'').toLowerCase());
+  function col(kws, def) {
+    const i = hdr.findIndex(h => kws.every(k => h.includes(k)));
+    return i >= 0 ? i : def;
+  }
+  const ix = {
+    sn:col(['sn'],0), ts:col(['timestamp'],1),
+    acE:col(['ac','kwh'],2), acP:col(['ac','power'],3),
+    bSoc:col(['battery','soc'],4), bP:col(['battery','power'],5),
+    g1E:col(['gun1','meter'],6), g1S:col(['gun1','soc'],7),
+    g1P:col(['gun1','power'],8), g1St:col(['gun1','status'],9),
+    g2E:col(['gun2','meter'],10), g2S:col(['gun2','soc'],11),
+    g2P:col(['gun2','power'],12), g2St:col(['gun2','status'],13)
+  };
+  const rows = [];
+  for (let i=1; i<raw.length; i++) {
+    const r = raw[i]; if (!r) continue;
+    const ts = r[ix.ts]; let t;
+    if (typeof ts==='number') t = Math.round((ts - 25569) * 86400000);
+    else if (typeof ts==='string') t = new Date(ts).getTime();
+    else continue;
+    if (isNaN(t)) continue;
+    const n = v => { const x=parseFloat(v); return isNaN(x)?null:x; };
+    rows.push({
+      t, sn: r[ix.sn],
+      ac_kwh:n(r[ix.acE]), ac_kw:n(r[ix.acP]),
+      bat_soc:n(r[ix.bSoc]), bat_kw:n(r[ix.bP]),
+      g1_kwh:n(r[ix.g1E]), g1_soc:n(r[ix.g1S]), g1_kw:n(r[ix.g1P]), g1_st:r[ix.g1St]||'',
+      g2_kwh:n(r[ix.g2E]), g2_soc:n(r[ix.g2S]), g2_kw:n(r[ix.g2P]), g2_st:r[ix.g2St]||''
+    });
+  }
+  rows.sort((a,b) => a.t - b.t);
+  return rows;
+}
+
+/* ── Format helpers ── */
+const fmtN = (v,d=1) => v==null?'—':v.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+const fmtPct = v => v==null?'—':(v*100).toFixed(1)+'%';
+const fmtDur = m => { const h=Math.floor(m/60),mn=Math.round(m%60); return h>0?h+'h '+mn+'m':mn+'m'; };
+const fmtDate = t => new Date(t).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'UTC'});
+
+/* ── Main compute + render ── */
+function opdRun() {
+  const rows = OPD.db.rows;
+  const n = rows.length;
+  if (!n) return;
+
+  const t0=rows[0].t, tn=rows[n-1].t;
+  const scopeMin = Math.round((tn-t0)/60000)+1;
+  const scopeHours = scopeMin/60;
+
+  /* Meter deltas (same as cpo.html: last-first non-null positive) */
+  function meterDelta(field) {
+    let first=null, last=null;
+    for (let i=0; i<n; i++) {
+      const v = rows[i][field];
+      if (v!=null && v>0) { if (first==null) first=v; last=v; }
+    }
+    return last!=null ? last-first : 0;
+  }
+  const g1Kwh=meterDelta('g1_kwh'), g2Kwh=meterDelta('g2_kwh');
+  const dcKwh=g1Kwh+g2Kwh;
+  const acKwh=meterDelta('ac_kwh');
+  const efficiency = acKwh>0 ? dcKwh/acKwh : 0;
+
+  /* Session detection (contiguous minutes kW>0.5 or status=Charging, min 2 min) */
+  function detectSess(kwField, stField) {
+    const sess=[]; let inS=false, si=0, e=0, pk=0;
+    for (let i=0; i<n; i++) {
+      const kw=rows[i][kwField]||0, st=rows[i][stField]||'';
+      const act = kw>0.5 || st==='Charging';
+      if (act && !inS) { inS=true; si=i; e=0; pk=0; }
+      if (inS) { e+=kw/60; if(kw>pk) pk=kw; }
+      if (!act && inS) {
+        if (i-si>=2) sess.push({si, ei:i-1, dur:i-si, energy:e, maxKw:pk});
+        inS=false;
+      }
+    }
+    if (inS && n-si>=2) sess.push({si, ei:n-1, dur:n-si, energy:e, maxKw:pk});
+    return sess;
+  }
+  const s1=detectSess('g1_kw','g1_st'), s2=detectSess('g2_kw','g2_st');
+  const allSess=[...s1,...s2];
+
+  /* Day keys */
+  const daySet=new Set();
+  rows.forEach(r => {
+    const d=new Date(r.t);
+    daySet.add(`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`);
+  });
+  const days=[...daySet].sort();
+  const D=days.length;
+
+  function rowDayKey(r) {
+    const d=new Date(r.t);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+  }
+
+  /* Hourly average AC kW */
+  const hourlyKw=Array(24).fill(0), hourlyN=Array(24).fill(0);
+  rows.forEach(r => { const h=new Date(r.t).getUTCHours(); hourlyKw[h]+=r.ac_kw||0; hourlyN[h]++; });
+  const hourlyAvg=hourlyKw.map((v,i)=>hourlyN[i]>0?v/hourlyN[i]:0);
+
+  /* Operating mode */
+  let idleMin=0, singleMin=0, parallelMin=0;
+  rows.forEach(r => {
+    const g1=(r.g1_kw||0)>0.5?1:0, g2=(r.g2_kw||0)>0.5?1:0;
+    if (g1+g2===0) idleMin++; else if (g1+g2===1) singleMin++; else parallelMin++;
+  });
+
+  /* Battery */
+  const batSocs=rows.map(r=>r.bat_soc||0).filter(v=>v>0);
+  const batSocAvg=batSocs.length?batSocs.reduce((a,b)=>a+b,0)/batSocs.length:0;
+  const batSocMin=batSocs.length?Math.min(...batSocs):0;
+  const batSocMax=batSocs.length?Math.max(...batSocs):0;
+  const batThroughput=rows.reduce((a,r)=>r.bat_kw<0?a+Math.abs(r.bat_kw)/60:a, 0);
+  const batCharging=rows.reduce((a,r)=>r.bat_kw>0?a+r.bat_kw/60:a, 0);
+
+  /* Peak */
+  let peakAc=0;
+  rows.forEach(r=>{ if((r.ac_kw||0)>peakAc) peakAc=r.ac_kw; });
+
+  /* Utilization */
+  const connMin=singleMin+parallelMin;
+  const connTimeUtil=scopeMin>0?connMin/scopeMin:0;
+  const dcEnergyBench=(240+peakAc)*2*scopeHours;
+  const dcEnergyUtil=dcEnergyBench>0?dcKwh/dcEnergyBench:0;
+  const acActiveMin=rows.filter(r=>(r.ac_kw||0)>1).length;
+  const acTimeUtil=scopeMin>0?acActiveMin/scopeMin:0;
+
+  /* Session stats */
+  const sessKwh=allSess.map(s=>s.energy);
+  const sessAvgKwh=sessKwh.length?sessKwh.reduce((a,b)=>a+b,0)/sessKwh.length:0;
+  const sessMedianKwh=sessKwh.length?[...sessKwh].sort((a,b)=>a-b)[Math.floor(sessKwh.length/2)]:0;
+  const sessDur=allSess.map(s=>s.dur);
+  const sessAvgDur=sessDur.length?sessDur.reduce((a,b)=>a+b,0)/sessDur.length:0;
+  const sessPerDay=allSess.length/Math.max(D,1);
+
+  /* Per-day session counts */
+  const daySessionCounts=days.map(dk=>
+    allSess.filter(s=>rowDayKey(rows[s.si])===dk).length
+  );
+
+  /* Per-day AC energy (meter delta per day) */
+  const dayAcKwh=days.map(dk=>{
+    const dr=rows.filter(r=>rowDayKey(r)===dk&&r.ac_kwh>0);
+    if(!dr.length) return 0;
+    return dr[dr.length-1].ac_kwh - dr[0].ac_kwh;
+  });
+
+  OPD.M = {
+    acKwh,dcKwh,g1Kwh,g2Kwh,efficiency,
+    sessionCount:allSess.length, sessPerDay, sessAvgKwh, sessMedianKwh, sessAvgDur, sessKwh,
+    connTimeUtil, dcEnergyUtil, acTimeUtil,
+    batSocAvg, batSocMin, batSocMax, batThroughput, batCharging,
+    idleMin, singleMin, parallelMin,
+    peakAc, scopeMin, scopeHours, D, days,
+    hourlyAvg, daySessionCounts, dayAcKwh,
+    t0, tn
+  };
+
+  /* Show UI */
+  document.getElementById('opd-empty').style.display='none';
+  document.getElementById('opd-data').style.display='block';
+  document.getElementById('opd-tabs').style.display='flex';
+  document.getElementById('opd-status').textContent=OPD.db.sn+' · '+D+' Tage · '+n.toLocaleString()+' min';
+  document.getElementById('opd-status').style.color='var(--c5)';
+  document.getElementById('opd-title').textContent='Operating Performance: '+OPD.db.sn;
+  document.getElementById('opd-desc').textContent=fmtDate(t0)+' – '+fmtDate(tn)+' · '+D+' Tage · '+n.toLocaleString()+' Messwerte (1-Min-Auflösung)';
+
+  /* Destroy old charts */
+  Object.values(OPD.charts).forEach(c=>{ try{c.destroy();}catch(e){} });
+  OPD.charts={};
+
+  opdRenderEnergy();
+  opdRenderSessions();
+  opdRenderUtil();
+  opdRenderBattery();
+  opdRenderMode();
+  opdRenderSocDays();
+
+  /* Switch to energy tab */
+  opdTab('energy');
+}
+
+/* ── KPI card builder ── */
+function opdKpiCard(label, value, unit, sub, accent='', dark=false) {
+  return `<div class="kpi-card${dark?' dark':''}">
+    <div class="kpi-label"><span class="kpi-label-dot" style="${dark?'background:var(--elmi-orange)':''}"></span>${label}</div>
+    <div class="kpi-value${accent?' '+accent:''}">${value}${unit?'<span class="kpi-unit"> '+unit+'</span>':''}</div>
+    <div class="kpi-sub">${sub}</div>
+  </div>`;
+}
+
+function opdMkChart(id, type, data, opts) {
+  const el=document.getElementById(id); if(!el) return null;
+  if(el._chart){el._chart.destroy();el._chart=null;}
+  el._chart=new Chart(el,{type,data,options:deepMerge(BASE,opts||{})});
+  OPD.charts[id]=el._chart;
+  return el._chart;
+}
+
+/* ── Render: Energy tab ── */
+function opdRenderEnergy() {
+  const M=OPD.M;
+  document.getElementById('opd-kpi-energy').innerHTML=[
+    opdKpiCard('AC Input gesamt', fmtN(M.acKwh,1), 'kWh', 'Meterstand-Delta (exakt)', 'accent'),
+    opdKpiCard('DC Output gesamt', fmtN(M.dcKwh,1), 'kWh', 'Gun 1 + Gun 2 Meterstand'),
+    opdKpiCard('Wirkungsgrad', fmtPct(M.efficiency), '', 'DC kWh ÷ AC kWh', 'green'),
+    opdKpiCard('Peak AC-Leistung', fmtN(M.peakAc,1), 'kW', 'Maximalleistung im Scope', 'orange'),
+  ].join('');
+
+  opdMkChart('opd-c-hourly','bar',{
+    labels:Array.from({length:24},(_,i)=>String(i).padStart(2,'0')),
+    datasets:[{label:'Ø AC kW',data:M.hourlyAvg,
+      backgroundColor:M.hourlyAvg.map(v=>v>M.peakAc*.5?P.red+'cc':P.orange+'88'),
+      borderRadius:4,borderSkipped:false}]
+  },{});
+
+  opdMkChart('opd-c-split','doughnut',{
+    labels:['Gun 1','Gun 2'],
+    datasets:[{data:[M.g1Kwh,M.g2Kwh],backgroundColor:[P.orange,P.purple],borderWidth:0,hoverOffset:6,cutout:'68%'}]
+  },{
+    scales:{x:{display:false},y:{display:false}},
+    plugins:{legend:{display:true,position:'right',labels:{color:'#6B6B76',font:{size:10},boxWidth:10,padding:10}}}
+  });
+
+  opdMkChart('opd-c-daily','bar',{
+    labels:M.days.map(d=>d.slice(5)),
+    datasets:[{label:'AC kWh/Tag',data:M.dayAcKwh,backgroundColor:P.red+'99',borderRadius:4,borderSkipped:false}]
+  },{});
+}
+
+/* ── Render: Sessions tab ── */
+function opdRenderSessions() {
+  const M=OPD.M;
+  document.getElementById('opd-kpi-sessions').innerHTML=[
+    opdKpiCard('Sessions gesamt', M.sessionCount.toString(), '', 'Erkannte Ladesessions (≥2 min)', 'accent'),
+    opdKpiCard('Sessions / Tag', fmtN(M.sessPerDay,1), '', 'Ø Tages-Sessions'),
+    opdKpiCard('Ø Energie / Session', fmtN(M.sessAvgKwh,1), 'kWh', 'Durchschnitt'),
+    opdKpiCard('Median Energie', fmtN(M.sessMedianKwh,1), 'kWh', '50. Perzentil'),
+    opdKpiCard('Ø Dauer / Session', fmtDur(M.sessAvgDur), '', 'Aktive Ladezeit'),
+  ].join('');
+
+  /* Histogram 0–100 kWh in 10er-Schritten */
+  const bkts=[0,10,20,30,40,50,60,70,80,90,100];
+  const hist=Array(bkts.length-1).fill(0);
+  M.sessKwh.forEach(v=>{ const i=bkts.findIndex((b,j)=>v>=b&&v<bkts[j+1]); if(i>=0)hist[i]++; });
+  opdMkChart('opd-c-seshist','bar',{
+    labels:bkts.slice(0,-1).map((b,i)=>`${b}–${bkts[i+1]}`),
+    datasets:[{label:'Sessions',data:hist,backgroundColor:P.purple+'99',borderRadius:4,borderSkipped:false}]
+  },{});
+
+  opdMkChart('opd-c-sesday','bar',{
+    labels:M.days.map(d=>d.slice(5)),
+    datasets:[{label:'Sessions/Tag',data:M.daySessionCounts,backgroundColor:P.red+'99',borderRadius:4,borderSkipped:false}]
+  },{});
+}
+
+/* ── Render: Utilization tab ── */
+function opdRenderUtil() {
+  const M=OPD.M;
+  document.getElementById('opd-kpi-util').innerHTML=[
+    opdKpiCard('Connection Time Util.', fmtPct(M.connTimeUtil), '', 'Ladezeit ÷ Scope-Zeit', 'accent'),
+    opdKpiCard('DC Energy Utilization', fmtPct(M.dcEnergyUtil), '', 'DC kWh ÷ theoret. Maximum'),
+    opdKpiCard('AC Time Utilization', fmtPct(M.acTimeUtil), '', 'AC aktiv (>1 kW) ÷ Scope-Zeit'),
+    opdKpiCard('Scope-Stunden', fmtN(M.scopeHours,1), 'h', M.D+' Tage · '+M.scopeMin.toLocaleString()+' min'),
+  ].join('');
+
+  const bench = (240+M.peakAc)*2*M.scopeHours;
+  document.getElementById('opd-util-basis').innerHTML=`
+    <b>DC Energy Benchmark</b> = (240 kW + Peak-AC) × nGuns × Scope-Stunden<br>
+    = (240 + ${fmtN(M.peakAc,1)}) × 2 × ${fmtN(M.scopeHours,1)} h = <b>${fmtN(bench,0)} kWh</b><br>
+    DC Output: <b>${fmtN(M.dcKwh,1)} kWh</b> → DC Energy Utilization: <b>${fmtPct(M.dcEnergyUtil)}</b><br><br>
+    <b>Connection Time Utilization</b> = Aktive Ladezeit ÷ Scope-Zeit<br>
+    = ${(M.singleMin+M.parallelMin).toLocaleString()} min ÷ ${M.scopeMin.toLocaleString()} min = <b>${fmtPct(M.connTimeUtil)}</b><br><br>
+    <b>Session-Erkennung:</b> kW > 0,5 oder Status = "Charging" · Mindest-Laufzeit: 2 Minuten<br>
+    <b>Energie-Berechnung:</b> Meterstand-Delta (last − first non-null reading) für maximale Genauigkeit
+  `;
+}
+
+/* ── Render: Battery tab ── */
+function opdRenderBattery() {
+  const M=OPD.M;
+  document.getElementById('opd-kpi-bat').innerHTML=[
+    opdKpiCard('Ø Battery SoC', fmtN(M.batSocAvg,1), '%', 'Scope-Durchschnitt (alle bat_soc > 0)', '', true),
+    opdKpiCard('SoC Bereich', fmtN(M.batSocMin,0)+' – '+fmtN(M.batSocMax,0), '%', 'Min – Max im Scope', '', true),
+    opdKpiCard('Battery Throughput', fmtN(M.batThroughput,1), 'kWh', 'Entladung (bat_kw < 0) kumuliert', '', true),
+    opdKpiCard('Battery Charging', fmtN(M.batCharging,1), 'kWh', 'Ladung aus Netz/PV (bat_kw > 0)', '', true),
+  ].join('');
+}
+
+/* ── Render: Operating Mode tab ── */
+function opdRenderMode() {
+  const M=OPD.M;
+  const total=M.idleMin+M.singleMin+M.parallelMin;
+  const pmax=Math.max(M.idleMin,M.singleMin,M.parallelMin,1);
+  document.getElementById('opd-mode-bars').innerHTML=[
+    ['Idle', M.idleMin, 'var(--n300)'],
+    ['Single Charging', M.singleMin, 'var(--elmi-red)'],
+    ['Parallel Charging', M.parallelMin, 'var(--elmi-purple)']
+  ].map(([name,val,col])=>`
+    <div class="mode-row">
+      <span class="mode-name">${name}</span>
+      <div class="mode-bar-wrap"><div class="mode-bar" style="width:${(val/pmax*100).toFixed(1)}%;background:${col}"></div></div>
+      <span class="mode-val">${fmtDur(val)} · ${fmtPct(val/total)}</span>
+    </div>
+  `).join('');
+
+  opdMkChart('opd-c-mode','doughnut',{
+    labels:['Idle','Single Charging','Parallel Charging'],
+    datasets:[{data:[M.idleMin,M.singleMin,M.parallelMin],
+      backgroundColor:['#E7E7EB',P.red,P.purple],borderWidth:0,hoverOffset:6,cutout:'60%'}]
+  },{
+    scales:{x:{display:false},y:{display:false}},
+    plugins:{legend:{display:true,position:'right',labels:{color:'#6B6B76',font:{size:10},boxWidth:10,padding:8}}}
+  });
+}
+
+/* ── Render: SoC per Day tab ── */
+function opdRenderSocDays() {
+  const M=OPD.M;
+  const btns=document.getElementById('opd-day-btns');
+  btns.innerHTML=M.days.map((d,i)=>
+    `<button class="btn${i===0?' btn-primary':''}" style="font-size:11px" onclick="opdShowSocDay(${i})">${d.slice(5)}</button>`
+  ).join('');
+  opdShowSocDay(0);
+}
+
+function opdShowSocDay(idx) {
+  OPD.activeDay=idx;
+  const M=OPD.M;
+  const dk=M.days[idx];
+  document.getElementById('opd-soc-title').textContent='SoC & Ladeleistung · '+dk;
+  const allBtns=document.getElementById('opd-day-btns').children;
+  for(let i=0;i<allBtns.length;i++){
+    allBtns[i].classList.toggle('btn-primary',i===idx);
+    if(i!==idx) allBtns[i].classList.remove('btn-primary');
+  }
+
+  function rowDayKey(r){const d=new Date(r.t);return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;}
+  const dayRows=OPD.db.rows.filter(r=>rowDayKey(r)===dk);
+  if(!dayRows.length) return;
+
+  /* Downsample for chart performance */
+  const step=Math.max(1,Math.floor(dayRows.length/120));
+  const sub=dayRows.filter((_,i)=>i%step===0);
+  const labels=sub.map(r=>{const d=new Date(r.t);return String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0');});
+
+  opdMkChart('opd-c-soc','line',{
+    labels,
     datasets:[
-      {label:'Battery SoC %',data:[95,93,88,82,76,70,72,78,84,88,90,91,90,88,86,84,82,80,78,76,74,72,70,68],
-       yAxisID:'y1',borderColor:P.purple,backgroundColor:ctx=>areaFill(ctx.chart.ctx,P.purple),fill:true,tension:.4,pointRadius:0,borderWidth:1.5},
-      {label:'Ladeleistung kW',data:[0,0,0,0,50,120,280,520,700,820,900,940,940,920,860,920,1050,1050,950,800,600,400,200,100],
-       yAxisID:'y2',borderColor:P.orange,fill:false,tension:.4,pointRadius:0,borderWidth:1.5}
+      {label:'Battery SoC %',data:sub.map(r=>r.bat_soc||0),
+       yAxisID:'y1',borderColor:P.purple,
+       backgroundColor:ctx=>areaFill(ctx.chart.ctx,P.purple,0.15),
+       fill:true,tension:.4,pointRadius:0,borderWidth:1.5},
+      {label:'AC kW',data:sub.map(r=>r.ac_kw||0),
+       yAxisID:'y2',borderColor:P.orange,fill:false,tension:.4,pointRadius:0,borderWidth:1.5},
+      {label:'Gun 1 kW',data:sub.map(r=>r.g1_kw||0),
+       yAxisID:'y2',borderColor:P.red,fill:false,tension:.3,pointRadius:0,borderWidth:1,borderDash:[4,2]},
+      {label:'Gun 2 kW',data:sub.map(r=>r.g2_kw||0),
+       yAxisID:'y2',borderColor:P.tang,fill:false,tension:.3,pointRadius:0,borderWidth:1,borderDash:[4,2]}
     ]
   },{
     plugins:{legend:{display:true,labels:{color:'#6B6B76',font:{size:10},boxWidth:10}}},
     scales:{
       y1:{position:'left',min:0,max:100,grid:{color:'rgba(14,14,20,.04)'},ticks:{color:'#9A9AA5',font:{size:10}}},
       y2:{position:'right',grid:{display:false},ticks:{color:'#9A9AA5',font:{size:10}}},
-      x:{grid:{color:'rgba(14,14,20,.04)'},ticks:{color:'#9A9AA5',font:{size:10}}}
+      x:{grid:{color:'rgba(14,14,20,.04)'},ticks:{color:'#9A9AA5',font:{size:10},maxTicksLimit:12}}
     }
   });
-
-  // DC Source Split donut (orange + purple like cpo.html)
-  mk('c2p1','doughnut',{
-    labels:['From Grid (AC)','From Battery'],
-    datasets:[{data:[70,30],backgroundColor:[P.orange,P.purple],borderWidth:0,hoverOffset:6,cutout:'68%'}]
-  },{
-    scales:{x:{display:false},y:{display:false}},
-    plugins:{legend:{display:true,position:'right',labels:{color:'#6B6B76',font:{size:11},boxWidth:10,padding:12}}}
-  });
-
-  mk('c3p1','line',{
-    labels:months.slice(0,6),
-    datasets:[
-      {label:'Umsatz (T€)',data:[82,91,108,124,138,147],borderColor:P.red,backgroundColor:ctx=>areaFill(ctx.chart.ctx,P.red,0.1),fill:true,tension:.4,pointRadius:3,borderWidth:2},
-      {label:'Plan',data:[90,90,110,120,135,145],borderColor:P.n400,borderDash:[4,4],fill:false,tension:.4,pointRadius:0,borderWidth:1.5}
-    ]
-  },{plugins:{legend:{display:true,labels:{color:'#6B6B76',font:{size:10},boxWidth:10}}}});
 }
 
 /* ── P2 ── */
@@ -1735,5 +2128,6 @@ function initP7(){
   });
 }
 </script>
+<script src="scripts/opd-demo.js"></script>
 </body>
 </html>
