@@ -56,12 +56,16 @@
 </div>
 <script>
 (function(){
-  function H(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return Math.abs(h).toString(16);}
-  const KEY="elmi_auth_37910", HASH=H("***REMOVED***");
+  const KEY="elmi_auth_37910", HASH="__ELMI_CPO_PWD_HASH__";
+  async function sha256hex(s){
+    const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+  }
   if(sessionStorage.getItem(KEY)===HASH) document.getElementById("elmiLoginOverlay").style.display="none";
-  window.elmiCheckLogin=function(){
+  window.elmiCheckLogin=async function(){
     const v=document.getElementById("elmiLoginPwd").value;
-    if(H(v)===HASH){
+    const h=await sha256hex(v);
+    if(h===HASH){
       sessionStorage.setItem(KEY,HASH);
       document.getElementById("elmiLoginOverlay").style.display="none";
     } else {

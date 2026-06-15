@@ -1,0 +1,49 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Inject password hashes
+        env:
+          SALES_PASSWORD: ${{ secrets.SALES_PASSWORD }}
+          CPO_PASSWORD: ${{ secrets.CPO_PASSWORD }}
+        run: |
+          # Compute SHA-256 hex hashes from the secrets
+          SALES_HASH=$(python3 -c "import hashlib,os; print(hashlib.sha256(os.environ['SALES_PASSWORD'].encode()).hexdigest())")
+          CPO_HASH=$(python3   -c "import hashlib,os; print(hashlib.sha256(os.environ['CPO_PASSWORD'].encode()).hexdigest())")
+
+          # Replace placeholders in a build copy (never modifies source files)
+          cp -r . /tmp/build
+          sed -i "s/__ELMI_SALES_PWD_HASH__/${SALES_HASH}/g" /tmp/build/sales.html
+          sed -i "s/__ELMI_CPO_PWD_HASH__/${CPO_HASH}/g"     /tmp/build/cpo.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/build
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
