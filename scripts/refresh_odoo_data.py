@@ -114,11 +114,43 @@ def classify_dir(author, msg_type):
         return 'Ex-In'
     return 'In-Ex' if msg_type == 'email' else 'In-In'
 
-print('Fetching sale orders for ho field...', flush=True)
+print('Fetching sale orders for ho field + YTD revenue...', flush=True)
 orders = rpc.execute_kw(DB, uid, KEY, 'sale.order', 'search_read',
     [[['state','in',['sale','done']]]],
-    {'fields': ['opportunity_id'], 'limit': 1000})
+    {'fields': ['opportunity_id','date_order','amount_untaxed','name','partner_id'], 'limit': 2000})
 opp_ids_with_order = {o['opportunity_id'][0] for o in orders if o.get('opportunity_id')}
+
+# ── YTD revenue from sale.order (Nettobetrag) ────────────────────────────────
+from collections import defaultdict
+ytd_by_month = defaultdict(float)
+ytd_orders_out = []
+for o in orders:
+    d = (o.get('date_order') or '')[:10]
+    if not d.startswith('2026-'):
+        continue
+    mo = d[:7]
+    net = round(o.get('amount_untaxed') or 0, 2)
+    ytd_by_month[mo] += net
+    ytd_orders_out.append({
+        'id':      o['id'],
+        'name':    o.get('name',''),
+        'partner': o['partner_id'][1] if o.get('partner_id') else '',
+        'date':    d,
+        'mo':      mo,
+        'net':     net,
+    })
+
+MONTH_LABELS = {
+    '2026-01':'Januar 2026','2026-02':'Februar 2026','2026-03':'März 2026',
+    '2026-04':'April 2026','2026-05':'Mai 2026','2026-06':'Juni 2026',
+    '2026-07':'Juli 2026','2026-08':'August 2026','2026-09':'September 2026',
+    '2026-10':'Oktober 2026','2026-11':'November 2026','2026-12':'Dezember 2026',
+}
+ytd_months_out = [
+    {'mo': mo, 'label': MONTH_LABELS.get(mo, mo), 'net': round(v, 2)}
+    for mo, v in sorted(ytd_by_month.items())
+]
+print(f'YTD 2026 sale orders: {len(ytd_orders_out)}, total net: {sum(v["net"] for v in ytd_months_out):,.0f} EUR', flush=True)
 
 print('Fetching messages...', flush=True)
 msgs = rpc.execute_kw(DB, uid, KEY, 'mail.message', 'search_read',
@@ -167,9 +199,10 @@ print(f'Activities: {len(acts_out)}. Directions: {dict(dirs)}', flush=True)
 # ── 4. Inject into sales.html ─────────────────────────────────────────────────
 print('Injecting data into sales.html...', flush=True)
 
-new_leads_js = 'const ALL_LEADS = ' + json.dumps(leads_out, ensure_ascii=False, separators=(',',':')) + ';'
-new_acts_js  = 'const ALL_ACTS2 = ' + json.dumps(acts_out,  ensure_ascii=True,  separators=(',',':')) + ';'
-new_meta_js  = 'const LEAD_META = ' + json.dumps(meta_out,  ensure_ascii=False, separators=(',',':')) + ';'
+new_leads_js  = 'const ALL_LEADS = '    + json.dumps(leads_out,       ensure_ascii=False, separators=(',',':')) + ';'
+new_acts_js   = 'const ALL_ACTS2 = '   + json.dumps(acts_out,        ensure_ascii=True,  separators=(',',':')) + ';'
+new_meta_js   = 'const LEAD_META = '   + json.dumps(meta_out,        ensure_ascii=False, separators=(',',':')) + ';'
+new_ytd_js    = 'const INVOICE_YTD = ' + json.dumps({'months': ytd_months_out, 'orders': ytd_orders_out}, ensure_ascii=False, separators=(',',':')) + ';'
 
 def safe_replace(html, pattern, replacement, label):
     m = re.search(pattern, html, re.DOTALL)
@@ -178,9 +211,10 @@ def safe_replace(html, pattern, replacement, label):
         return html
     return html[:m.start()] + replacement + html[m.end():]
 
-sales_html = safe_replace(sales_html, r'const ALL_LEADS = \[.*?\];', new_leads_js, 'ALL_LEADS')
-sales_html = safe_replace(sales_html, r'const ALL_ACTS2 = \[.*?\];', new_acts_js,  'ALL_ACTS2')
-sales_html = safe_replace(sales_html, r'const LEAD_META = \[.*?\];', new_meta_js,  'LEAD_META')
+sales_html = safe_replace(sales_html, r'const ALL_LEADS = \[.*?\];',    new_leads_js,  'ALL_LEADS')
+sales_html = safe_replace(sales_html, r'const ALL_ACTS2 = \[.*?\];',    new_acts_js,   'ALL_ACTS2')
+sales_html = safe_replace(sales_html, r'const LEAD_META = \[.*?\];',    new_meta_js,   'LEAD_META')
+sales_html = safe_replace(sales_html, r'const INVOICE_YTD = \{.*?\};',  new_ytd_js,    'INVOICE_YTD')
 
 with open(HTML_PATH, 'w', encoding='utf-8') as f:
     f.write(sales_html)
