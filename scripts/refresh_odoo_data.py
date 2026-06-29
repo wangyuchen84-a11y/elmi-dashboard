@@ -216,6 +216,26 @@ sales_html = safe_replace(sales_html, r'const ALL_ACTS2 = \[.*?\];',    new_acts
 sales_html = safe_replace(sales_html, r'const LEAD_META = \[.*?\];',    new_meta_js,   'LEAD_META')
 sales_html = safe_replace(sales_html, r'const INVOICE_YTD = \{[^\n]*\};', new_ytd_js,   'INVOICE_YTD')
 
+# ── Inject YTD total directly as static text into the KPI element ────────────
+ytd_total = sum(m['net'] for m in ytd_months_out)
+def fmt_ytd(n):
+    if n >= 1e6: return f'{n/1e6:.2f} Mio.'
+    if n >= 1000: return f'{round(n/1000)} K'
+    return str(round(n))
+
+ytd_str = fmt_ytd(ytd_total)
+sales_html = re.sub(
+    r'(<span[^>]+id="kpi-ytd"[^>]*>)[^<]*(</span>)',
+    rf'\g<1>{ytd_str}\g<2>',
+    sales_html
+)
+sales_html = re.sub(
+    r'(<strong[^>]+id="dyn-goal-ytd"[^>]*>)[^<]*(</strong>)',
+    rf'\g<1>{ytd_str} EUR\g<2>',
+    sales_html
+)
+print(f'YTD KPI injected: {ytd_str}', flush=True)
+
 with open(HTML_PATH, 'w', encoding='utf-8') as f:
     f.write(sales_html)
 
