@@ -435,6 +435,7 @@ canvas.clickable{cursor:pointer}
         <div class="kpi" style="cursor:pointer" onclick="openOrdersModal()">
           <span class="kpi-ey">Auftragseingang</span><span class="kpi-v" id="kpi-orders">—</span>
           <div class="kpi-c" id="kpi-orders-c"><i data-lucide="trending-up" size="11"></i> Closed Won &#8594;</div>
+          <div class="kpi-c" id="kpi-orders-delta" style="color:var(--elmi-tang);margin-top:2px"></div>
         </div>
         <div class="kpi" style="cursor:pointer" onclick="openDrawerByStageKey(4)">
           <span class="kpi-ey">Commitment Phase</span>
@@ -2433,6 +2434,18 @@ function renderDashboardKPIs(){
   const wonRev=wonDeals.reduce((s,d)=>s+(d.revenue||0),0);
   ge('kpi-orders').innerHTML=fmtKpiV(wonRev);
   ge('kpi-orders-c').innerHTML='<i data-lucide="trending-up" size="11"></i> '+wonDeals.length+' Closed Won &#8594;';
+  // Delta: fakturierter Umsatz (INVOICE_LTM Netto) minus Auftragseingang
+  const ltmNet=INVOICE_LTM.reduce((s,m)=>s+(m.net||0),0);
+  const delta=ltmNet-wonRev;
+  const deltaEl=ge('kpi-orders-delta');
+  if(deltaEl){
+    if(Math.abs(delta)>100){
+      const sign=delta>=0?'+':'−';
+      deltaEl.innerHTML='<i data-lucide="receipt" size="11"></i> '+sign+' '+fmtKpiV(Math.abs(delta))+' fakturiert';
+    } else {
+      deltaEl.innerHTML='';
+    }
+  }
 
   // Stage 4 — Betrag + Anzahl
   const s4list=ALL_LEADS.filter(d=>stageNum(d.stage)===4);
