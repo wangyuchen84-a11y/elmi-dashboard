@@ -214,7 +214,7 @@ def safe_replace(html, pattern, replacement, label):
 sales_html = safe_replace(sales_html, r'const ALL_LEADS = \[.*?\];',    new_leads_js,  'ALL_LEADS')
 sales_html = safe_replace(sales_html, r'const ALL_ACTS2 = \[.*?\];',    new_acts_js,   'ALL_ACTS2')
 sales_html = safe_replace(sales_html, r'const LEAD_META = \[.*?\];',    new_meta_js,   'LEAD_META')
-sales_html = safe_replace(sales_html, r'const INVOICE_YTD = \{.*?\};',  new_ytd_js,    'INVOICE_YTD')
+sales_html = safe_replace(sales_html, r'const INVOICE_YTD = \{[^\n]*\};', new_ytd_js,   'INVOICE_YTD')
 
 with open(HTML_PATH, 'w', encoding='utf-8') as f:
     f.write(sales_html)
