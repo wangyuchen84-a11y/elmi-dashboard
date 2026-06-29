@@ -2273,26 +2273,39 @@ function closeOdooModal() {
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeOdooModal(); });
 
 function openYTDModal() {
-  const months = INVOICE_YTD.months || [];
-  const orders = INVOICE_YTD.orders || [];
-  const total = months.reduce((s,m)=>s+m.net,0);
+  const orders = (INVOICE_YTD.orders || []).sort((a,b)=>b.date.localeCompare(a.date));
+  const totalNet   = orders.reduce((s,o)=>s+(o.net||0),0);
+  const totalGross = orders.reduce((s,o)=>s+(o.gross||0),0);
   document.getElementById('odoo-m-title').textContent = 'Umsatz YTD 2026';
-  document.getElementById('odoo-m-sub').textContent = 'Nettoumsatz aus bestätigten Verkaufsaufträgen (sale.order)';
+  document.getElementById('odoo-m-sub').textContent = 'Bestätigte Verkaufsaufträge — Netto & Brutto';
   document.getElementById('odoo-m-stats').innerHTML =
     `<div class="odoo-m-stat">Aufträge: <strong>${orders.length}</strong></div>`+
-    `<div class="odoo-m-stat">Gesamt netto: <strong>${fmtE(total)}</strong></div>`;
-  document.getElementById('odoo-m-body').innerHTML = months.map(m=>`
+    `<div class="odoo-m-stat">Netto gesamt: <strong>${fmtE(totalNet)}</strong></div>`+
+    `<div class="odoo-m-stat">Brutto gesamt: <strong>${fmtE(totalGross)}</strong></div>`;
+  document.getElementById('odoo-m-body').innerHTML = orders.length ? orders.map(o=>`
     <div class="odoo-deal-row">
       <div class="odoo-deal-info">
-        <div class="odoo-deal-name">${m.label}</div>
-        <div class="odoo-deal-meta"><span>Nettoumsatz (amount_untaxed)</span></div>
+        <div class="odoo-deal-name">${o.name} — ${o.partner||'—'}</div>
+        <div class="odoo-deal-meta">
+          <span>${o.date}</span>
+          <span style="margin-left:12px;color:var(--fg2)">Netto: <strong style="color:var(--fg1)">${fmtE(o.net)}</strong></span>
+          <span style="margin-left:12px;color:var(--fg2)">Brutto: <strong style="color:var(--fg1)">${fmtE(o.gross)}</strong></span>
+        </div>
       </div>
-      <div style="font-family:var(--mono);font-weight:700;font-size:15px;color:var(--elmi-red);margin-left:auto;padding-right:20px">${fmtE(m.net)}</div>
+      <a href="${ODOO_BASE}/odoo/sales/${o.id}" target="_blank" style="margin-left:auto;padding:0 16px;white-space:nowrap;color:var(--elmi-red);font-size:12px;display:flex;align-items:center;gap:4px">
+        <i data-lucide="external-link" size="11"></i> Odoo
+      </a>
     </div>`).join('') +
     `<div class="odoo-deal-row" style="background:var(--bg2)">
-      <div class="odoo-deal-info"><div class="odoo-deal-name" style="font-weight:800">Gesamt YTD</div></div>
-      <div style="font-family:var(--mono);font-weight:800;font-size:16px;color:var(--success);margin-left:auto;padding-right:20px">${fmtE(total)}</div>
-    </div>`;
+      <div class="odoo-deal-info">
+        <div class="odoo-deal-name" style="font-weight:800">Gesamt YTD</div>
+        <div class="odoo-deal-meta">
+          <span>Netto: <strong>${fmtE(totalNet)}</strong></span>
+          <span style="margin-left:12px">Brutto: <strong>${fmtE(totalGross)}</strong></span>
+        </div>
+      </div>
+    </div>`
+  : '<div style="padding:24px;text-align:center;color:var(--fg3)">Keine Aufträge gefunden.</div>';
   document.getElementById('odoo-modal-bg').classList.add('open');
   lucide.createIcons();
 }

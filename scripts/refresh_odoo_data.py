@@ -117,7 +117,7 @@ def classify_dir(author, msg_type):
 print('Fetching sale orders for ho field + YTD revenue...', flush=True)
 orders = rpc.execute_kw(DB, uid, KEY, 'sale.order', 'search_read',
     [[['state','in',['sale','done']]]],
-    {'fields': ['opportunity_id','date_order','amount_untaxed','name','partner_id'], 'limit': 2000})
+    {'fields': ['opportunity_id','date_order','amount_untaxed','amount_total','name','partner_id'], 'limit': 2000})
 opp_ids_with_order = {o['opportunity_id'][0] for o in orders if o.get('opportunity_id')}
 
 # ── YTD revenue from sale.order (Nettobetrag) ────────────────────────────────
@@ -138,6 +138,7 @@ for o in orders:
         'date':    d,
         'mo':      mo,
         'net':     net,
+        'gross':   round(o.get('amount_total') or 0, 2),
     })
 
 MONTH_LABELS = {
