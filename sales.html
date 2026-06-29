@@ -2274,8 +2274,8 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeOdooModal();
 
 function openYTDModal() {
   const orders = (INVOICE_YTD.orders || []).sort((a,b)=>b.date.localeCompare(a.date));
-  const totalNet   = orders.reduce((s,o)=>s+(o.net||0),0);
-  const totalGross = orders.reduce((s,o)=>s+(o.gross||0),0);
+  const totalNet   = orders.reduce((s,o)=>s+(+o.net||0),0);
+  const totalGross = orders.reduce((s,o)=>s+(+o.gross||0),0);
   document.getElementById('odoo-m-title').textContent = 'Umsatz YTD 2026';
   document.getElementById('odoo-m-sub').textContent = 'Bestätigte Verkaufsaufträge — Netto & Brutto';
   document.getElementById('odoo-m-stats').innerHTML =
@@ -2289,7 +2289,7 @@ function openYTDModal() {
         <div class="odoo-deal-meta">
           <span>${o.date}</span>
           <span style="margin-left:12px;color:var(--fg2)">Netto: <strong style="color:var(--fg1)">${fmtE(o.net)}</strong></span>
-          <span style="margin-left:12px;color:var(--fg2)">Brutto: <strong style="color:var(--fg1)">${fmtE(o.gross)}</strong></span>
+          <span style="margin-left:12px;color:var(--fg2)">Brutto: <strong style="color:var(--fg1)">${fmtE(+o.gross||0)}</strong></span>
         </div>
       </div>
       <a href="${ODOO_BASE}/odoo/sales/${o.id}" target="_blank" style="margin-left:auto;padding:0 16px;white-space:nowrap;color:var(--elmi-red);font-size:12px;display:flex;align-items:center;gap:4px">
