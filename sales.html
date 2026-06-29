@@ -435,7 +435,7 @@ canvas.clickable{cursor:pointer}
         <div class="kpi" style="cursor:pointer" onclick="openOrdersModal()">
           <span class="kpi-ey">Auftragseingang</span><span class="kpi-v" id="kpi-orders">—</span>
           <div class="kpi-c" id="kpi-orders-c"><i data-lucide="trending-up" size="11"></i> Closed Won &#8594;</div>
-          <div class="kpi-c" id="kpi-orders-delta" style="color:var(--elmi-tang);margin-top:2px"></div>
+          <div class="kpi-c" id="kpi-orders-delta" style="color:var(--elmi-tang);margin-top:2px;cursor:pointer" onclick="event.stopPropagation();openDeltaModal()"></div>
         </div>
         <div class="kpi" style="cursor:pointer" onclick="openDrawerByStageKey(4)">
           <span class="kpi-ey">Commitment Phase</span>
@@ -2328,6 +2328,76 @@ function openLostModal() {
         </a>
       </div>`).join('')
     : '<div style="padding:24px;text-align:center;color:var(--fg3)">Keine Closed Lost Deals gefunden.</div>';
+  document.getElementById('odoo-modal-bg').classList.add('open');
+  lucide.createIcons();
+}
+
+function openDeltaModal() {
+  // Auftragseingang per Kunde (Closed Won CRM)
+  const wonDeals = ALL_LEADS.filter(d=>stageNum(d.stage)===5);
+  const byPartnerAE = {};
+  wonDeals.forEach(d=>{
+    const key = (d.partner||'Unbekannt').split(',')[0].trim();
+    if(!byPartnerAE[key]) byPartnerAE[key]={ae:0,deals:[]};
+    byPartnerAE[key].ae += d.revenue||0;
+    byPartnerAE[key].deals.push(d);
+  });
+
+  // Fakturierter Umsatz per Kunde (INVOICE_LTM)
+  const byPartnerInv = {};
+  INVOICE_LTM.forEach(mo=>(mo.invoices||[]).forEach(inv=>{
+    const key = (inv.partner||'Unbekannt').split(',')[0].trim();
+    if(!byPartnerInv[key]) byPartnerInv[key]={inv:0,invList:[]};
+    byPartnerInv[key].inv += inv.net||0;
+    byPartnerInv[key].invList.push(inv);
+  }));
+
+  // Zusammenführen
+  const allKeys = new Set([...Object.keys(byPartnerAE), ...Object.keys(byPartnerInv)]);
+  const rows = [...allKeys].map(k=>({
+    partner: k,
+    ae:  (byPartnerAE[k]||{}).ae  || 0,
+    inv: (byPartnerInv[k]||{}).inv || 0,
+    deals:   (byPartnerAE[k]||{}).deals   || [],
+    invList: (byPartnerInv[k]||{}).invList || [],
+  })).sort((a,b)=>(b.inv+b.ae)-(a.inv+a.ae));
+
+  const totalAE  = rows.reduce((s,r)=>s+r.ae, 0);
+  const totalInv = rows.reduce((s,r)=>s+r.inv, 0);
+  const totalDelta = totalInv - totalAE;
+
+  document.getElementById('odoo-m-title').textContent = 'Auftragseingang vs. Fakturierter Umsatz';
+  document.getElementById('odoo-m-sub').textContent = 'Netto · pro Kunde · LTM';
+  document.getElementById('odoo-m-stats').innerHTML =
+    `<div class="odoo-m-stat">Auftragseingang: <strong>${fmtE(totalAE)}</strong></div>`+
+    `<div class="odoo-m-stat">Fakturiert: <strong>${fmtE(totalInv)}</strong></div>`+
+    `<div class="odoo-m-stat">Differenz: <strong style="color:${totalDelta>=0?'var(--success)':'var(--elmi-red)'}">${totalDelta>=0?'+':'−'}${fmtE(Math.abs(totalDelta))}</strong></div>`;
+
+  const colStyle = 'font-family:var(--mono);font-size:12px;white-space:nowrap;text-align:right;min-width:80px;padding:0 8px';
+  document.getElementById('odoo-m-body').innerHTML =
+    `<div class="odoo-deal-row" style="background:var(--bg2);font-size:11px;color:var(--fg3);font-weight:600">
+      <div class="odoo-deal-info"><div class="odoo-deal-name">Kunde</div></div>
+      <div style="${colStyle}">Auftragseing.</div>
+      <div style="${colStyle}">Fakturiert</div>
+      <div style="${colStyle};padding-right:16px">Differenz</div>
+    </div>` +
+    rows.map(r=>{
+      const delta = r.inv - r.ae;
+      const dColor = delta > 100 ? 'var(--success)' : delta < -100 ? 'var(--elmi-red)' : 'var(--fg2)';
+      const dSign  = delta >= 0 ? '+' : '−';
+      return `<div class="odoo-deal-row">
+        <div class="odoo-deal-info">
+          <div class="odoo-deal-name">${r.partner}</div>
+          <div class="odoo-deal-meta" style="font-size:10px;color:var(--fg3)">
+            ${r.deals.length ? r.deals.length+' Deal'+(r.deals.length>1?'s':'') : ''}
+            ${r.invList.length ? (r.deals.length?' · ':'')+r.invList.length+' Rechnung'+(r.invList.length>1?'en':'') : ''}
+          </div>
+        </div>
+        <div style="${colStyle}">${r.ae>0?fmtE(r.ae):'—'}</div>
+        <div style="${colStyle}">${r.inv>0?fmtE(r.inv):'—'}</div>
+        <div style="${colStyle};padding-right:16px;font-weight:700;color:${dColor}">${Math.abs(delta)>100?dSign+fmtE(Math.abs(delta)):'≈ 0'}</div>
+      </div>`;
+    }).join('');
   document.getElementById('odoo-modal-bg').classList.add('open');
   lucide.createIcons();
 }
