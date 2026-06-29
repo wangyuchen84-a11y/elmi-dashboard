@@ -67,7 +67,7 @@ def assign_group(lead_id, tags, name, partner):
 # ── 1. Fetch Leads ───────────────────────────────────────────────────────────
 print('Fetching leads...', flush=True)
 raw_leads = rpc.execute_kw(DB, uid, KEY, 'crm.lead', 'search_read',
-    [[]],
+    [[['active','in',[True,False]]]],
     {'fields': ['id','name','partner_id','user_id','stage_id',
                 'expected_revenue','probability','date_deadline','tag_ids'],
      'limit': 1000})
@@ -96,7 +96,7 @@ print(f'Leads: {len(leads_out)} total. Reps: {dict(sorted(reps.items(), key=lamb
 # ── 2. Fetch Lead Meta (create date, medium) ─────────────────────────────────
 print('Fetching lead meta...', flush=True)
 raw_meta = rpc.execute_kw(DB, uid, KEY, 'crm.lead', 'search_read',
-    [[]],
+    [[['active','in',[True,False]]]],
     {'fields': ['id','create_date','medium_id'], 'limit': 1000})
 
 meta_out = [{'id': l['id'],
