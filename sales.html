@@ -408,7 +408,7 @@ canvas.clickable{cursor:pointer}
         <div class="goal-track"><div class="goal-fill" id="dyn-goal-fill" style="width:10.17%"></div></div>
         <div class="goal-meta">
           <div class="goal-stat" id="dyn-goal-stat-w">Gewichtete Pipeline <strong>1,017 Mio. EUR</strong></div>
-          <div class="goal-stat">Brutto-Pipeline <strong id="dyn-goal-brutto">32,85 Mio. EUR</strong></div>
+          <div class="goal-stat">Netto-Pipeline <strong id="dyn-goal-brutto">32,85 Mio. EUR</strong></div>
           <div class="goal-stat">Umsatz YTD <strong id="dyn-goal-ytd">2.34 Mio. EUR</strong></div>
           <div class="goal-stat">Aktive Deals <strong id="dyn-goal-deals">327</strong></div>
         </div>
@@ -419,7 +419,7 @@ canvas.clickable{cursor:pointer}
       </div>
       <div class="kpi-grid">
         <div class="kpi strip" style="cursor:pointer" onclick="openDrawer('all')">
-          <span class="kpi-ey">Brutto-Pipeline</span>
+          <span class="kpi-ey">Netto-Pipeline</span>
           <span class="kpi-v gt" id="dyn-exec-brutto">32,85<small style="font-size:.4em;letter-spacing:0"> Mio.</small></span>
           <div class="kpi-c" id="dyn-exec-brutto-c"><i data-lucide="euro" size="11"></i> Alle 327 Deals &#8594;</div>
         </div>
@@ -456,7 +456,7 @@ canvas.clickable{cursor:pointer}
       <div class="cgrid">
         <div class="card"><div class="card-t">Volumen nach Stage <span>klick = Deals anzeigen</span></div><div style="height:230px"><canvas id="c1"></canvas></div></div>
         <div class="card"><div class="card-t">Gewichtet je Sales Rep <span>Volumen × Wahrsch. (Stage Config)</span></div><div style="height:230px"><canvas id="c2"></canvas></div></div>
-        <div class="card"><div class="card-t">Auftragsvolumen je Sales Rep <span>Brutto-Pipeline</span></div><div style="height:230px"><canvas id="c2b"></canvas></div></div>
+        <div class="card"><div class="card-t">Auftragsvolumen je Sales Rep <span>Netto-Pipeline</span></div><div style="height:230px"><canvas id="c2b"></canvas></div></div>
         <div class="card wide"><div class="card-t">Fakturierter Umsatz <span>LTM – letzte 12 Monate, klickbar</span></div><div style="height:170px"><canvas id="c3"></canvas></div></div>
       </div>
     </div>
@@ -539,7 +539,7 @@ canvas.clickable{cursor:pointer}
 
       <!-- Kundengruppen Charts -->
       <div class="cgrid" style="margin-bottom:22px">
-        <div class="card"><div class="card-t">Brutto-Pipeline je Gruppe <span>EUR &middot; klickbar</span></div><div style="height:250px"><canvas id="cg1"></canvas></div></div>
+        <div class="card"><div class="card-t">Netto-Pipeline je Gruppe <span>EUR &middot; klickbar</span></div><div style="height:250px"><canvas id="cg1"></canvas></div></div>
         <div class="card"><div class="card-t">Gewichtete Pipeline je Gruppe <span>EUR</span></div><div style="height:250px"><canvas id="cg2"></canvas></div></div>
         <div class="card wide"><div class="card-t">Anzahl Deals &amp; Ø Revenue je Gruppe</div><div style="height:190px"><canvas id="cg3"></canvas></div></div>
       </div>
@@ -1239,13 +1239,13 @@ function openDrawer(stageFilter,sortBy,repFilter){
   _deals=d;
   const title=stageFilter==='all'?(repFilter||'Alle Deals'):stageFilter;
   document.getElementById('drawerTitle').textContent=title;
-  document.getElementById('drawerSub').textContent=d.length+' Deals · '+fmtE(d.reduce((s,x)=>s+x.revenue,0))+' Brutto';
+  document.getElementById('drawerSub').textContent=d.length+' Deals · '+fmtE(d.reduce((s,x)=>s+x.revenue,0))+' Netto';
   const tot=d.reduce((s,x)=>s+x.revenue,0);
   const wgt=d.reduce((s,x)=>s+x.revenue*getConfiguredProb(x),0);
   const avg=d.length?d.reduce((s,x)=>s+getConfiguredProb(x)*100,0)/d.length:0;
   document.getElementById('drawerStats').innerHTML=
     `<div class="dstat"><div class="dstat-v">${d.length}</div><div class="dstat-l">Deals</div></div>`+
-    `<div class="dstat"><div class="dstat-v">${fmt(tot)}</div><div class="dstat-l">Brutto EUR</div></div>`+
+    `<div class="dstat"><div class="dstat-v">${fmt(tot)}</div><div class="dstat-l">Netto EUR</div></div>`+
     `<div class="dstat"><div class="dstat-v" style="color:var(--elmi-red)">${fmt(wgt)}</div><div class="dstat-l">Gewichtet</div></div>`+
     `<div class="dstat"><div class="dstat-v">${avg.toFixed(1)}%</div><div class="dstat-l">Ø Wahrsch.</div></div>`;
   sortAndRender();
@@ -1379,13 +1379,13 @@ function openDrawerByStageKey(key){
   _deals=d;
   const def=STAGE_DEFS.find(x=>x.key===key)||{label:'Stage',long:''};
   document.getElementById('drawerTitle').textContent=def.label+' '+def.long;
-  document.getElementById('drawerSub').textContent=d.length+' Deals · '+fmtE(d.reduce((s,x)=>s+x.revenue,0))+' Brutto';
+  document.getElementById('drawerSub').textContent=d.length+' Deals · '+fmtE(d.reduce((s,x)=>s+x.revenue,0))+' Netto';
   const tot=d.reduce((s,x)=>s+x.revenue,0);
   const wgt=d.reduce((s,x)=>s+x.revenue*getConfiguredProb(x),0);
   const avg=d.length?d.reduce((s,x)=>s+getConfiguredProb(x)*100,0)/d.length:0;
   document.getElementById('drawerStats').innerHTML=
     `<div class="dstat"><div class="dstat-v">${d.length}</div><div class="dstat-l">Deals</div></div>`+
-    `<div class="dstat"><div class="dstat-v">${fmt(tot)}</div><div class="dstat-l">Brutto EUR</div></div>`+
+    `<div class="dstat"><div class="dstat-v">${fmt(tot)}</div><div class="dstat-l">Netto EUR</div></div>`+
     `<div class="dstat"><div class="dstat-v" style="color:var(--elmi-red)">${fmt(wgt)}</div><div class="dstat-l">Gewichtet</div></div>`+
     `<div class="dstat"><div class="dstat-v">${avg.toFixed(1)}%</div><div class="dstat-l">Ø Wahrsch.</div></div>`;
   _sort='revenue';_query='';document.getElementById('drawerSearch').value='';
@@ -1421,7 +1421,7 @@ function openDrawerByStageKey(key){
   const cols=reps.map((_,i)=>colPalette[i%colPalette.length]);
   new Chart(document.getElementById('c2b'),{
     type:'bar',data:{labels:reps.map(r=>r.split(' ').slice(-1)[0]),
-      datasets:[{label:'Brutto (T€)',data:vals,backgroundColor:cols,borderRadius:6,borderSkipped:false}]},
+      datasets:[{label:'Netto (T€)',data:vals,backgroundColor:cols,borderRadius:6,borderSkipped:false}]},
     options:{...BASE,plugins:{legend:{display:false},tooltip:{callbacks:{title:([t])=>reps[t.dataIndex]}}},
       onClick(e,els){if(els.length)openDrawer('all','revenue',reps[els[0].index]);},
       scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v+'K'}}}}
@@ -1435,14 +1435,12 @@ function openInvoiceModal(idx) {
   const mo = INVOICE_LTM[idx] || {};
   const invs = mo.invoices || [];
   const label = (mo.label||'').replace(/(\w+) (\d+)/,'$1 20$2');
-  const totalNet   = invs.reduce((s,i)=>s+i.net,0);
-  const totalGross = invs.reduce((s,i)=>s+i.total,0);
+  const totalNet = invs.reduce((s,i)=>s+i.net,0);
   document.getElementById('odoo-m-title').textContent = 'Fakturierter Umsatz — ' + label;
-  document.getElementById('odoo-m-sub').textContent = invs.length + ' Rechnung' + (invs.length!==1?'en':'') + ' · Brutto ' + fmtE(totalGross);
+  document.getElementById('odoo-m-sub').textContent = invs.length + ' Rechnung' + (invs.length!==1?'en':'') + ' · Netto ' + fmtE(totalNet);
   document.getElementById('odoo-m-stats').innerHTML =
     `<div class="odoo-m-stat">Rechnungen: <strong>${invs.length}</strong></div>`+
-    `<div class="odoo-m-stat">Netto: <strong>${fmtE(totalNet)}</strong></div>`+
-    `<div class="odoo-m-stat">Brutto (inkl. MwSt.): <strong>${fmtE(totalGross)}</strong></div>`;
+    `<div class="odoo-m-stat">Netto gesamt: <strong>${fmtE(totalNet)}</strong></div>`;
   document.getElementById('odoo-m-body').innerHTML = invs.length
     ? invs.map((inv,i)=>`
       <div class="odoo-deal-row">
@@ -1454,11 +1452,10 @@ function openInvoiceModal(idx) {
             <span style="color:var(--fg3)">|</span>
             <span>${inv.date}</span>
             <span style="color:var(--fg3)">|</span>
-            <span style="color:var(--fg2)">Netto: ${fmtE(inv.net)}</span>
           </div>
         </div>
         <div style="font-family:var(--mono);font-weight:700;font-size:14px;margin-left:auto;padding-right:20px;white-space:nowrap">
-          ${fmtE(inv.total)}
+          ${fmtE(inv.net)}
           <a href="${ODOO_BASE}/odoo/accounting/customer-invoices/${inv.id}" target="_blank" style="margin-left:8px;color:var(--elmi-red);font-size:11px;font-weight:400">
             <i data-lucide="external-link" size="10"></i>
           </a>
@@ -1476,11 +1473,11 @@ function openInvoiceModal(idx) {
     return;
   }
   const labels = ltm.map(m=>m.label);
-  const vals   = ltm.map(m=>m.total);
+  const vals   = ltm.map(m=>m.net);
   // aktueller Monat = letzter Eintrag → rot, Rest gedimmt
   const colors = ltm.map((_,i)=> i===ltm.length-1 ? C.red : C.muted);
   new Chart(document.getElementById('c3'),{type:'bar',
-    data:{labels,datasets:[{label:'Brutto EUR',data:vals,backgroundColor:colors,borderRadius:6,borderSkipped:false}]},
+    data:{labels,datasets:[{label:'Netto EUR',data:vals,backgroundColor:colors,borderRadius:6,borderSkipped:false}]},
     options:{...BASE,plugins:{legend:{display:false}},
       onClick(e,els){if(els.length) openInvoiceModal(els[0].index);},
       scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1000?Math.round(v/1000)+'K':v}}}}
@@ -1602,7 +1599,7 @@ function openDrawerStageRep(stageKey, rep) {
   const avg=d.length?d.reduce((s,x)=>s+getConfiguredProb(x)*100,0)/d.length:0;
   document.getElementById('drawerStats').innerHTML=
     `<div class="dstat"><div class="dstat-v">${d.length}</div><div class="dstat-l">Deals</div></div>`+
-    `<div class="dstat"><div class="dstat-v">${fmt(tot)}</div><div class="dstat-l">Brutto EUR</div></div>`+
+    `<div class="dstat"><div class="dstat-v">${fmt(tot)}</div><div class="dstat-l">Netto EUR</div></div>`+
     `<div class="dstat"><div class="dstat-v" style="color:var(--elmi-red)">${fmt(wgt)}</div><div class="dstat-l">Gewichtet</div></div>`+
     `<div class="dstat"><div class="dstat-v">${avg.toFixed(1)}%</div><div class="dstat-l">Ø Wahrsch.</div></div>`;
   _sort='revenue'; _query='';
@@ -1742,7 +1739,7 @@ rebuildC5(null);
     document.getElementById('odoo-m-sub').textContent=deals.length+' Deal'+(deals.length!==1?'s':'')+' · Gewichtet '+fmtE(totalW);
     document.getElementById('odoo-m-stats').innerHTML=
       `<div class="odoo-m-stat">Deals: <strong>${deals.length}</strong></div>`+
-      `<div class="odoo-m-stat">Brutto: <strong>${fmtE(totalRev)}</strong></div>`+
+      `<div class="odoo-m-stat">Netto: <strong>${fmtE(totalRev)}</strong></div>`+
       `<div class="odoo-m-stat">Gewichtet: <strong style="color:var(--success)">${fmtE(totalW)}</strong></div>`;
     document.getElementById('odoo-m-body').innerHTML=deals.map((d,i)=>{
       const w=Math.round(d.revenue*getConfiguredProb(d));
@@ -1822,11 +1819,11 @@ function openDrawerGroup(group){
   _deals = ALL_LEADS.filter(d=>d.group===group);
   const ga = gagg.find(g=>g.group===group)||{count:0,revenue:0,weighted:0};
   document.getElementById('drawerTitle').textContent = group;
-  document.getElementById('drawerSub').textContent = ga.count+' Deals · '+fmtE(ga.revenue)+' Brutto';
+  document.getElementById('drawerSub').textContent = ga.count+' Deals · '+fmtE(ga.revenue)+' Netto';
   const avg = _deals.length ? _deals.reduce((s,d)=>s+d.prob,0)/_deals.length : 0;
   document.getElementById('drawerStats').innerHTML=
     `<div class="dstat"><div class="dstat-v">${_deals.length}</div><div class="dstat-l">Deals</div></div>`+
-    `<div class="dstat"><div class="dstat-v">${fmt(ga.revenue)}</div><div class="dstat-l">Brutto EUR</div></div>`+
+    `<div class="dstat"><div class="dstat-v">${fmt(ga.revenue)}</div><div class="dstat-l">Netto EUR</div></div>`+
     `<div class="dstat"><div class="dstat-v" style="color:var(--elmi-red)">${fmt(ga.weighted)}</div><div class="dstat-l">Gewichtet</div></div>`+
     `<div class="dstat"><div class="dstat-v">${avg.toFixed(1)}%</div><div class="dstat-l">Ø Prob.</div></div>`;
   sortAndRender();
@@ -1836,7 +1833,7 @@ function openDrawerGroup(group){
 (function(){
   const ch=new Chart(document.getElementById('cg1'),{
     type:'bar',
-    data:{labels:GRP_LABELS,datasets:[{label:'Brutto EUR',data:gagg.map(g=>Math.round(g.revenue/1000)),backgroundColor:GRP_COLS,borderRadius:6,borderSkipped:false}]},
+    data:{labels:GRP_LABELS,datasets:[{label:'Netto EUR',data:gagg.map(g=>Math.round(g.revenue/1000)),backgroundColor:GRP_COLS,borderRadius:6,borderSkipped:false}]},
     options:{...BASE,plugins:{legend:{display:false}},
       onClick(e,els){if(els.length)openDrawerGroup(GRP_ORDER[els[0].index]);},
       scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v+'K'}}}}
@@ -2244,7 +2241,7 @@ function openOdooModal(title, acts) {
     `<div class="odoo-m-stat">Deals: <strong>${lids.length}</strong></div>`+
     `<div class="odoo-m-stat">Interaktionen: <strong>${totalActs}</strong></div>`+
     `<div class="odoo-m-stat">Ø Interaktionen/Deal: <strong>${(totalActs/Math.max(lids.length,1)).toFixed(1)}</strong></div>`+
-    `<div class="odoo-m-stat">Brutto-Pipeline: <strong>${fmtE(totalRev)}</strong></div>`;
+    `<div class="odoo-m-stat">Netto-Pipeline: <strong>${fmtE(totalRev)}</strong></div>`;
 
   document.getElementById('odoo-m-body').innerHTML = deals.length
     ? deals.map((d,i)=>`
@@ -2278,35 +2275,30 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeOdooModal();
 
 function openYTDModal() {
   const orders = (INVOICE_YTD.orders || []).sort((a,b)=>b.date.localeCompare(a.date));
-  const totalNet   = orders.reduce((s,o)=>s+(+o.net||0),0);
-  const totalGross = orders.reduce((s,o)=>s+(+o.gross||0),0);
+  const totalNet = orders.reduce((s,o)=>s+(+o.net||0),0);
   document.getElementById('odoo-m-title').textContent = 'Umsatz YTD 2026';
-  document.getElementById('odoo-m-sub').textContent = 'Bestätigte Verkaufsaufträge — Netto & Brutto';
+  document.getElementById('odoo-m-sub').textContent = 'Bestätigte Verkaufsaufträge — Netto';
   document.getElementById('odoo-m-stats').innerHTML =
     `<div class="odoo-m-stat">Aufträge: <strong>${orders.length}</strong></div>`+
-    `<div class="odoo-m-stat">Netto gesamt: <strong>${fmtE(totalNet)}</strong></div>`+
-    `<div class="odoo-m-stat">Brutto gesamt: <strong>${fmtE(totalGross)}</strong></div>`;
+    `<div class="odoo-m-stat">Netto gesamt: <strong>${fmtE(totalNet)}</strong></div>`;
   document.getElementById('odoo-m-body').innerHTML = orders.length ? orders.map(o=>`
     <div class="odoo-deal-row">
       <div class="odoo-deal-info">
         <div class="odoo-deal-name">${o.name} — ${o.partner||'—'}</div>
         <div class="odoo-deal-meta">
           <span>${o.date}</span>
-          <span style="margin-left:12px;color:var(--fg2)">Netto: <strong style="color:var(--fg1)">${fmtE(o.net)}</strong></span>
-          <span style="margin-left:12px;color:var(--fg2)">Brutto: <strong style="color:var(--fg1)">${fmtE(+o.gross||0)}</strong></span>
         </div>
       </div>
-      <a href="${ODOO_BASE}/odoo/sales/${o.id}" target="_blank" style="margin-left:auto;padding:0 16px;white-space:nowrap;color:var(--elmi-red);font-size:12px;display:flex;align-items:center;gap:4px">
+      <div style="font-family:var(--mono);font-weight:700;font-size:14px;margin-left:auto;padding-right:8px;white-space:nowrap">
+        ${fmtE(o.net)}
+      </div>
+      <a href="${ODOO_BASE}/odoo/sales/${o.id}" target="_blank" style="padding:0 12px;white-space:nowrap;color:var(--elmi-red);font-size:12px;display:flex;align-items:center;gap:4px">
         <i data-lucide="external-link" size="11"></i> Odoo
       </a>
     </div>`).join('') +
     `<div class="odoo-deal-row" style="background:var(--bg2)">
       <div class="odoo-deal-info">
-        <div class="odoo-deal-name" style="font-weight:800">Gesamt YTD</div>
-        <div class="odoo-deal-meta">
-          <span>Netto: <strong>${fmtE(totalNet)}</strong></span>
-          <span style="margin-left:12px">Brutto: <strong>${fmtE(totalGross)}</strong></span>
-        </div>
+        <div class="odoo-deal-name" style="font-weight:800">Gesamt YTD — Netto: <strong>${fmtE(totalNet)}</strong></div>
       </div>
     </div>`
   : '<div style="padding:24px;text-align:center;color:var(--fg3)">Keine Aufträge gefunden.</div>';
@@ -3374,10 +3366,10 @@ const PEvo=(function(){
     const totalRev=deals.reduce((s,d)=>s+(d.revenue||0),0);
     const totalW=deals.reduce((s,d)=>s+d.revenue*getConfiguredProb(d),0);
     document.getElementById('odoo-m-title').textContent=label+' — '+stageName;
-    document.getElementById('odoo-m-sub').textContent=deals.length+' Deal'+(deals.length!==1?'s':'')+' · Brutto '+fmtE(totalRev);
+    document.getElementById('odoo-m-sub').textContent=deals.length+' Deal'+(deals.length!==1?'s':'')+' · Netto '+fmtE(totalRev);
     document.getElementById('odoo-m-stats').innerHTML=
       `<div class="odoo-m-stat">Deals: <strong>${deals.length}</strong></div>`+
-      `<div class="odoo-m-stat">Brutto: <strong>${fmtE(totalRev)}</strong></div>`+
+      `<div class="odoo-m-stat">Netto: <strong>${fmtE(totalRev)}</strong></div>`+
       `<div class="odoo-m-stat">Gewichtet: <strong style="color:var(--success)">${fmtE(totalW)}</strong></div>`;
     document.getElementById('odoo-m-body').innerHTML=deals.length?deals.map((d,i)=>{
       const w=Math.round((d.revenue||0)*getConfiguredProb(d));
@@ -3512,7 +3504,7 @@ const PEvo=(function(){
       +' <span>Monatsende-Snapshot'+(subtitle?' &middot; '+subtitle:'')+'</span></div>'
       +_stageToggleBtns()
       +'<div style="position:relative;width:100%;height:clamp(260px,35vw,420px)"><canvas id="evo-c1"></canvas></div></div>'
-      +'<div class="card"><div class="card-t">Pipeline-Volumen nach Stage &mdash; Brutto'
+      +'<div class="card"><div class="card-t">Pipeline-Volumen nach Stage &mdash; Netto'
       +' <span>EUR'+(subtitle?' &middot; '+subtitle:'')+'</span></div>'
       +'<div style="position:relative;width:100%;height:clamp(260px,35vw,420px)"><canvas id="evo-c2"></canvas></div></div>'
       +'</div>';
@@ -3573,7 +3565,7 @@ const PEvo=(function(){
       +' <span>Aktueller Stand &mdash; kein Verlauf</span></div>'
       +_stageToggleBtns()
       +'<div style="position:relative;width:100%;height:clamp(260px,35vw,420px)"><canvas id="evo-c1"></canvas></div></div>'
-      +'<div class="card"><div class="card-t">Pipeline-Volumen nach Stage &mdash; Brutto'
+      +'<div class="card"><div class="card-t">Pipeline-Volumen nach Stage &mdash; Netto'
       +' <span>EUR &mdash; kein Verlauf</span></div>'
       +'<div style="position:relative;width:100%;height:clamp(260px,35vw,420px)"><canvas id="evo-c2"></canvas></div></div>'
       +'</div>';
