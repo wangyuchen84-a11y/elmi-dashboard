@@ -2326,7 +2326,7 @@ function openLostModal() {
 }
 
 function openOrdersModal() {
-  const deals = ALL_LEADS.filter(d=>stageNum(d.stage)===99).sort((a,b)=>b.revenue-a.revenue);
+  const deals = ALL_LEADS.filter(d=>stageNum(d.stage)===5).sort((a,b)=>b.revenue-a.revenue);
   const total = deals.reduce((s,d)=>s+(d.revenue||0),0);
   document.getElementById('odoo-m-title').textContent = 'Auftragseingang';
   document.getElementById('odoo-m-sub').textContent = 'Closed Won — angenommene Angebote';
@@ -2412,8 +2412,8 @@ function renderDashboardKPIs(){
   ge('dyn-exec-brutto').innerHTML=fmtKpiV(brutto);
   ge('dyn-exec-brutto-c').innerHTML='<i data-lucide="euro" size="11"></i> Alle '+deals+' Deals &#8594;';
 
-  // Auftragseingang = Closed Won (stageNum 99)
-  const wonDeals=ALL_LEADS.filter(d=>stageNum(d.stage)===99);
+  // Auftragseingang = Closed Won (stageNum 5)
+  const wonDeals=ALL_LEADS.filter(d=>stageNum(d.stage)===5);
   const wonRev=wonDeals.reduce((s,d)=>s+(d.revenue||0),0);
   ge('kpi-orders').innerHTML=fmtKpiV(wonRev);
   ge('kpi-orders-c').innerHTML='<i data-lucide="trending-up" size="11"></i> '+wonDeals.length+' Closed Won &#8594;';
