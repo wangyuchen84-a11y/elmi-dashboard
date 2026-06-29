@@ -1445,6 +1445,30 @@ function openDrawerByStageKey(key){
   });
   document.getElementById('c2b').style.cursor='pointer';
 })();
+// ── Statische Altdaten: Rechnungen 43–61 (PDF-Rechnungen vor Odoo-Erfassung) ──
+const LEGACY_INVOICES = [
+  {nr:'000043',date:'2026-01-13',partner:'EFG Rheinland KG',net:850.00},
+  {nr:'000044',date:'2026-01-19',partner:'EFG Niederrhein KG',net:5000.00},
+  {nr:'000045',date:'2026-01-19',partner:'MF Energiepartner GmbH',net:79016.37},
+  {nr:'000046',date:'2026-01-19',partner:'Jolt Energy GmbH',net:140000.00},
+  {nr:'000047',date:'2026-01-20',partner:'weEnergize',net:21000.00},
+  {nr:'000048',date:'2026-01-21',partner:'EFG Cordes & Graefe Emden KG',net:68569.00},
+  {nr:'000049',date:'2026-01-22',partner:'Sächsische Haustechnik Edki KG',net:112387.40},
+  {nr:'000050',date:'2026-01-22',partner:'Sächsische Haustechnik Edki KG',net:112387.40},
+  {nr:'000051',date:'2026-01-22',partner:'Sächsische Haustechnik Edki KG',net:112387.40},
+  {nr:'000052',date:'2026-01-27',partner:'Jolt Energy GmbH',net:88775.00},
+  {nr:'000053',date:'2026-02-20',partner:'EFG Niederrhein KG',net:63450.00},
+  {nr:'000054',date:'2026-02-20',partner:'KTM Gebäudetechnik GmbH',net:60000.00},
+  {nr:'000055',date:'2026-02-20',partner:'Jolt Energy GmbH',net:88775.00},
+  {nr:'000056',date:'2026-02-20',partner:'EEFA GmbH',net:82635.00},
+  {nr:'000057',date:'2026-02-20',partner:'MaxSolar GmbH',net:39417.32},
+  {nr:'000058',date:'2026-02-20',partner:'MaxSolar GmbH',net:5475.50},
+  {nr:'000059',date:'2026-02-25',partner:'Sächsische Haustechnik Edki KG',net:48166.03},
+  {nr:'000060',date:'2026-02-25',partner:'Sächsische Haustechnik Edki KG',net:48166.03},
+  {nr:'000061',date:'2026-02-25',partner:'Sächsische Haustechnik Edki KG',net:48166.03},
+];
+const LEGACY_TOTAL = LEGACY_INVOICES.reduce((s,r)=>s+r.net,0); // 1 224 623.48
+
 // c3 — LTM invoice chart, dynamisch aus INVOICE_LTM
 const INVOICE_LTM = [{"mo":"2026-01","label":"Jan 26","net":131569.0,"total":156567.11,"invoices":[{"id":65,"number":"RE/2026/00026","partner":"EFG CORDES & GRAEFE EMDEN KG","date":"2026-01-21","net":68569.0,"total":81597.11},{"id":70,"number":"RE/2026/00029","partner":"X-NRW GmbH - we-energize, Max Fratzscher","date":"2026-01-20","net":63000.0,"total":74970.0}]},{"mo":"2026-03","label":"Mär 26","net":1000.0,"total":1190.0,"invoices":[{"id":1,"number":"RE/2026/00001","partner":"ATEM Networks Deutschland GmbH, Jessica Müller-Feist","date":"2026-03-11","net":1000.0,"total":1190.0}]},{"mo":"2026-04","label":"Apr 26","net":220708.71,"total":262643.37,"invoices":[{"id":6,"number":"RE/2026/00004","partner":"EFG Cordes & Graefe Brand KG","date":"2026-04-22","net":86590.45,"total":103042.64},{"id":3,"number":"RE/2026/00002","partner":"EFG Cordes & Graefe Brand KG, Peter Dewender","date":"2026-04-20","net":134118.26,"total":159600.73}]},{"mo":"2026-05","label":"Mai 26","net":254305.15,"total":302623.13,"invoices":[{"id":44,"number":"RE/2026/00009","partner":"EEFA GmbH, Jan Wojtun","date":"2026-05-27","net":1040.2,"total":1237.84},{"id":43,"number":"RE/2026/00008","partner":"EFG Hessen KG, Christian Weißenstein","date":"2026-05-27","net":850.0,"total":1011.5},{"id":10,"number":"RE/2026/00007","partner":"EFG Cordes & Graefe Brand KG, Peter Dewender","date":"2026-05-18","net":86590.45,"total":103042.63},{"id":9,"number":"RE/2026/00006","partner":"Jolt Energy GmbH","date":"2026-05-07","net":40000.0,"total":47600.0},{"id":8,"number":"RE/2026/00005","partner":"HS - C. Hempelmann KG. Hannover","date":"2026-05-06","net":125824.5,"total":149731.16}]},{"mo":"2026-06","label":"Jun 26","net":2798015.43,"total":3329638.38,"invoices":[{"id":72,"number":"RE/2026/00030","partner":"X-NRW GmbH - we-energize, Max Fratzscher","date":"2026-06-29","net":147000.0,"total":174930.0},{"id":68,"number":"RE/2026/00028","partner":"Sunrise Sales GmbH, Ben Kellerhoff","date":"2026-06-29","net":15793.38,"total":18794.12},{"id":67,"number":"RE/2026/00027","partner":"EFG CORDES & GRAEFE EMDEN KG","date":"2026-06-29","net":68569.0,"total":81597.11},{"id":64,"number":"RE/2026/00025","partner":"EEFA GmbH, Jan Wojtun","date":"2026-06-29","net":82635.0,"total":98335.65},{"id":62,"number":"RE/2026/00024","partner":"EEFA GmbH, Jan Wojtun","date":"2026-06-29","net":82635.0,"total":98335.65},{"id":61,"number":"RE/2026/00023","partner":"Jolt Energy Limited","date":"2026-06-24","net":233985.0,"total":278442.15},{"id":60,"number":"RE/2026/00022","partner":"Jolt Energy Limited","date":"2026-06-24","net":179567.4,"total":213685.21},{"id":59,"number":"RE/2026/00021","partner":"Jolt Energy Limited","date":"2026-06-24","net":157490.0,"total":187413.1},{"id":57,"number":"RE/2026/00020","partner":"Jolt Energy Limited","date":"2026-06-22","net":157490.0,"total":187413.1},{"id":56,"number":"RE/2026/00019","partner":"Jolt Energy Limited","date":"2026-06-22","net":233985.0,"total":278442.15},{"id":55,"number":"RE/2026/00018","partner":"Jolt Energy Limited","date":"2026-06-22","net":179567.4,"total":213685.21},{"id":54,"number":"RE/2026/00017","partner":"Busche Elektrotechnik GmbH, Markus Busche","date":"2026-06-16","net":850.0,"total":1011.5},{"id":53,"number":"RE/2026/00016","partner":"Kaiser Showtechnik GmbH, d.volkmann@schall-e.de","date":"2026-06-12","net":345000.0,"total":410550.0},{"id":52,"number":"RE/2026/00015","partner":"Busche Elektrotechnik GmbH, Markus Busche","date":"2026-06-12","net":144452.25,"total":171898.18},{"id":51,"number":"RE/2026/00014","partner":"Jolt Energy Limited","date":"2026-06-12","net":238493.5,"total":283807.27},{"id":50,"number":"RE/2026/00013","partner":"Jolt Energy Limited","date":"2026-06-12","net":160991.0,"total":191579.29},{"id":49,"number":"RE/2026/00012","partner":"Jolt Energy Limited","date":"2026-06-12","net":183118.4,"total":217910.9},{"id":46,"number":"RE/2026/00011","partner":"EFG CORDES & GRAEFE EMDEN KG","date":"2026-06-11","net":850.0,"total":1011.5},{"id":45,"number":"RE/2026/00010","partner":"eneryion GmbH, Roland Meifert","date":"2026-06-10","net":185543.1,"total":220796.29}]}];
 
@@ -1483,20 +1507,72 @@ function openInvoiceModal(idx) {
   lucide.createIcons();
 }
 
+function openLegacyInvoiceModal(filterMo) {
+  const fmtLocal = n => n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+  const invoices = filterMo ? LEGACY_INVOICES.filter(r=>r.date.slice(0,7)===filterMo) : LEGACY_INVOICES;
+  const total = invoices.reduce((s,r)=>s+r.net,0);
+  const MO_DE={'2026-01':'Januar 2026','2026-02':'Februar 2026'};
+  const title = filterMo ? 'Ältere Rechnungen — ' + (MO_DE[filterMo]||filterMo) : 'Ältere Ausgangsrechnungen (43–61)';
+  document.getElementById('odoo-m-title').textContent = title;
+  document.getElementById('odoo-m-sub').textContent = 'Statische Daten · Rechnungen vor Odoo-Erfassung · Netto';
+  document.getElementById('odoo-m-stats').innerHTML =
+    `<div class="odoo-m-stat">Rechnungen: <strong>${invoices.length}</strong></div>`+
+    `<div class="odoo-m-stat">Netto gesamt: <strong>${fmtLocal(total)}</strong></div>`;
+  document.getElementById('odoo-m-body').innerHTML = invoices.map(r=>`
+    <div class="odoo-deal-row">
+      <div class="odoo-deal-info">
+        <div class="odoo-deal-name">Rechnung ${r.nr} — ${r.partner}</div>
+        <div class="odoo-deal-meta"><span>${r.date}</span></div>
+      </div>
+      <div style="font-family:var(--mono);font-weight:700;font-size:14px;margin-left:auto;padding-right:20px;white-space:nowrap">
+        ${fmtLocal(r.net)}
+      </div>
+    </div>`).join('') +
+    `<div class="odoo-deal-row" style="background:var(--bg2)">
+      <div class="odoo-deal-info">
+        <div class="odoo-deal-name" style="font-weight:800">Gesamt Netto: <strong>${fmtLocal(total)}</strong></div>
+      </div>
+    </div>`;
+  document.getElementById('odoo-modal-bg').classList.add('open');
+  lucide.createIcons();
+}
+
 (function(){
-  const ltm = INVOICE_LTM;
-  if(!ltm.length){
+  // Legacy-Daten nach Monat gruppieren
+  const DE_MO={'01':'Jan','02':'Feb','03':'Mär','04':'Apr','05':'Mai','06':'Jun',
+                '07':'Jul','08':'Aug','09':'Sep','10':'Okt','11':'Nov','12':'Dez'};
+  const legacyByMo={};
+  LEGACY_INVOICES.forEach(r=>{
+    const mo=r.date.slice(0,7);
+    if(!legacyByMo[mo]) legacyByMo[mo]={net:0};
+    legacyByMo[mo].net+=r.net;
+  });
+  // Odoo-Monate in Map
+  const moMap={};
+  INVOICE_LTM.forEach(m=>{ moMap[m.mo]={...m,legacyNet:0,isLegacy:false}; });
+  // Legacy-Monate eintragen (Jan+Feb nicht in Odoo LTM)
+  Object.entries(legacyByMo).forEach(([mo,ld])=>{
+    const yr=mo.slice(2,4); const lbl=DE_MO[mo.slice(5,7)]+' '+yr;
+    if(!moMap[mo]) moMap[mo]={mo,label:lbl,net:0,total:0,invoices:[],legacyNet:0,isLegacy:true};
+    moMap[mo].legacyNet+=ld.net;
+  });
+  const allMonths=Object.values(moMap).sort((a,b)=>a.mo.localeCompare(b.mo));
+  if(!allMonths.length){
     document.getElementById('c3').parentElement.innerHTML='<div style="padding:24px;color:var(--fg3);text-align:center">Keine Rechnungsdaten verfügbar</div>';
     return;
   }
-  const labels = ltm.map(m=>m.label);
-  const vals   = ltm.map(m=>m.net);
-  // aktueller Monat = letzter Eintrag → rot, Rest gedimmt
-  const colors = ltm.map((_,i)=> i===ltm.length-1 ? C.red : C.muted);
+  const labels=allMonths.map(m=>m.label);
+  const vals=allMonths.map(m=>(m.net||0)+(m.legacyNet||0));
+  const colors=allMonths.map((m,i)=>i===allMonths.length-1?C.red:m.isLegacy?C.muted+'bb':C.muted);
   new Chart(document.getElementById('c3'),{type:'bar',
     data:{labels,datasets:[{label:'Netto EUR',data:vals,backgroundColor:colors,borderRadius:6,borderSkipped:false}]},
     options:{...BASE,plugins:{legend:{display:false}},
-      onClick(e,els){if(els.length) openInvoiceModal(els[0].index);},
+      onClick(e,els){
+        if(!els.length) return;
+        const mo=allMonths[els[0].index];
+        if(mo.isLegacy) openLegacyInvoiceModal(mo.mo);
+        else { const idx=INVOICE_LTM.findIndex(m=>m.mo===mo.mo); if(idx>=0) openInvoiceModal(idx); }
+      },
       scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1000?Math.round(v/1000)+'K':v}}}}
   });
   document.getElementById('c3').style.cursor='pointer';
@@ -2489,56 +2565,6 @@ const INVOICE_YTD = {"months":[{"mo":"2026-03","label":"März 2026","net":1000.0
   if(el) el.textContent=fv(ytd);
   if(el2) el2.textContent=fv(ytd)+' EUR';
 })();
-
-// ── Statische Altdaten: Rechnungen 43–61 (PDF-Rechnungen vor Odoo-Erfassung) ──
-const LEGACY_INVOICES = [
-  {nr:'000043',date:'2026-01-13',partner:'EFG Rheinland KG',net:850.00},
-  {nr:'000044',date:'2026-01-19',partner:'EFG Niederrhein KG',net:5000.00},
-  {nr:'000045',date:'2026-01-19',partner:'MF Energiepartner GmbH',net:79016.37},
-  {nr:'000046',date:'2026-01-19',partner:'Jolt Energy GmbH',net:140000.00},
-  {nr:'000047',date:'2026-01-20',partner:'weEnergize',net:21000.00},
-  {nr:'000048',date:'2026-01-21',partner:'EFG Cordes & Graefe Emden KG',net:68569.00},
-  {nr:'000049',date:'2026-01-22',partner:'Sächsische Haustechnik Edki KG',net:112387.40},
-  {nr:'000050',date:'2026-01-22',partner:'Sächsische Haustechnik Edki KG',net:112387.40},
-  {nr:'000051',date:'2026-01-22',partner:'Sächsische Haustechnik Edki KG',net:112387.40},
-  {nr:'000052',date:'2026-01-27',partner:'Jolt Energy GmbH',net:88775.00},
-  {nr:'000053',date:'2026-02-20',partner:'EFG Niederrhein KG',net:63450.00},
-  {nr:'000054',date:'2026-02-20',partner:'KTM Gebäudetechnik GmbH',net:60000.00},
-  {nr:'000055',date:'2026-02-20',partner:'Jolt Energy GmbH',net:88775.00},
-  {nr:'000056',date:'2026-02-20',partner:'EEFA GmbH',net:82635.00},
-  {nr:'000057',date:'2026-02-20',partner:'MaxSolar GmbH',net:39417.32},
-  {nr:'000058',date:'2026-02-20',partner:'MaxSolar GmbH',net:5475.50},
-  {nr:'000059',date:'2026-02-25',partner:'Sächsische Haustechnik Edki KG',net:48166.03},
-  {nr:'000060',date:'2026-02-25',partner:'Sächsische Haustechnik Edki KG',net:48166.03},
-  {nr:'000061',date:'2026-02-25',partner:'Sächsische Haustechnik Edki KG',net:48166.03},
-];
-const LEGACY_TOTAL = LEGACY_INVOICES.reduce((s,r)=>s+r.net,0); // 1 224 623.48
-
-function openLegacyInvoiceModal() {
-  const fmtLocal = n => n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
-  document.getElementById('odoo-m-title').textContent = 'Ältere Ausgangsrechnungen (43–61)';
-  document.getElementById('odoo-m-sub').textContent = 'Statische Daten · Rechnungen vor Odoo-Erfassung · Netto';
-  document.getElementById('odoo-m-stats').innerHTML =
-    `<div class="odoo-m-stat">Rechnungen: <strong>${LEGACY_INVOICES.length}</strong></div>`+
-    `<div class="odoo-m-stat">Netto gesamt: <strong>${fmtLocal(LEGACY_TOTAL)}</strong></div>`;
-  document.getElementById('odoo-m-body').innerHTML = LEGACY_INVOICES.map(r=>`
-    <div class="odoo-deal-row">
-      <div class="odoo-deal-info">
-        <div class="odoo-deal-name">Rechnung ${r.nr} — ${r.partner}</div>
-        <div class="odoo-deal-meta"><span>${r.date}</span></div>
-      </div>
-      <div style="font-family:var(--mono);font-weight:700;font-size:14px;margin-left:auto;padding-right:20px;white-space:nowrap">
-        ${fmtLocal(r.net)}
-      </div>
-    </div>`).join('') +
-    `<div class="odoo-deal-row" style="background:var(--bg2)">
-      <div class="odoo-deal-info">
-        <div class="odoo-deal-name" style="font-weight:800">Gesamt Netto: <strong>${fmtLocal(LEGACY_TOTAL)}</strong></div>
-      </div>
-    </div>`;
-  document.getElementById('odoo-modal-bg').classList.add('open');
-  lucide.createIcons();
-}
 
 // ── renderDashboardKPIs — recomputes all static KPI numbers from stage config ──
 function fmtKpiV(n){
