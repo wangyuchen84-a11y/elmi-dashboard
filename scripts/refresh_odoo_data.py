@@ -69,8 +69,18 @@ print('Fetching leads...', flush=True)
 raw_leads = rpc.execute_kw(DB, uid, KEY, 'crm.lead', 'search_read',
     [[['active','in',[True,False]]]],
     {'fields': ['id','name','partner_id','user_id','stage_id',
-                'expected_revenue','probability','date_deadline','tag_ids'],
+                'expected_revenue','probability','date_deadline','tag_ids','active'],
      'limit': 1000})
+
+# Verlorene Deals ausschließen: active=False + nicht Stage 5 (Closed Won)
+def is_closed_won(l):
+    stage = l['stage_id'][1] if l['stage_id'] else ''
+    import re as _re
+    m = _re.search(r'STAGE\s+(\d+)', stage, _re.I)
+    return m and int(m.group(1)) == 5
+
+raw_leads = [l for l in raw_leads if l.get('active', True) or is_closed_won(l)]
+print(f'After filtering lost deals: {len(raw_leads)} leads', flush=True)
 
 leads_out = []
 for l in raw_leads:
