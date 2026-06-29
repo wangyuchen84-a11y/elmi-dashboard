@@ -153,6 +153,46 @@ ytd_months_out = [
 ]
 print(f'YTD 2026 sale orders: {len(ytd_orders_out)}, total net: {sum(v["net"] for v in ytd_months_out):,.0f} EUR', flush=True)
 
+# ── LTM invoices from account.move ───────────────────────────────────────────
+from datetime import date, timedelta
+ltm_start = (date.today().replace(day=1) - timedelta(days=365)).strftime('%Y-%m-%d')
+print(f'Fetching invoices (LTM from {ltm_start})...', flush=True)
+raw_invoices = rpc.execute_kw(DB, uid, KEY, 'account.move', 'search_read',
+    [[['move_type','=','out_invoice'],
+      ['state','=','posted'],
+      ['invoice_date','>=',ltm_start]]],
+    {'fields': ['id','name','partner_id','invoice_date','amount_untaxed','amount_total'], 'limit': 2000})
+
+ltm_by_month = defaultdict(list)
+for inv in raw_invoices:
+    d = (inv.get('invoice_date') or '')[:10]
+    if not d: continue
+    mo = d[:7]
+    ltm_by_month[mo].append({
+        'id':      inv['id'],
+        'number':  inv.get('name',''),
+        'partner': inv['partner_id'][1] if inv.get('partner_id') else '',
+        'date':    d,
+        'net':     round(inv.get('amount_untaxed') or 0, 2),
+        'total':   round(inv.get('amount_total')   or 0, 2),
+    })
+
+# Build sorted month list (LTM = last 12 full months + current month)
+all_months = sorted(ltm_by_month.keys())
+MONTH_LABELS_DE = {
+    '01':'Jan','02':'Feb','03':'Mär','04':'Apr','05':'Mai','06':'Jun',
+    '07':'Jul','08':'Aug','09':'Sep','10':'Okt','11':'Nov','12':'Dez',
+}
+ltm_months_out = [
+    {'mo': mo,
+     'label': MONTH_LABELS_DE[mo[5:7]] + ' ' + mo[2:4],
+     'net':   round(sum(i['net']   for i in ltm_by_month[mo]), 2),
+     'total': round(sum(i['total'] for i in ltm_by_month[mo]), 2),
+     'invoices': ltm_by_month[mo]}
+    for mo in all_months
+]
+print(f'LTM invoices: {len(raw_invoices)} across {len(ltm_months_out)} months', flush=True)
+
 print('Fetching messages...', flush=True)
 msgs = rpc.execute_kw(DB, uid, KEY, 'mail.message', 'search_read',
     [[['model','=','crm.lead'],
@@ -204,6 +244,7 @@ new_leads_js  = 'const ALL_LEADS = '    + json.dumps(leads_out,       ensure_asc
 new_acts_js   = 'const ALL_ACTS2 = '   + json.dumps(acts_out,        ensure_ascii=True,  separators=(',',':')) + ';'
 new_meta_js   = 'const LEAD_META = '   + json.dumps(meta_out,        ensure_ascii=False, separators=(',',':')) + ';'
 new_ytd_js    = 'const INVOICE_YTD = ' + json.dumps({'months': ytd_months_out, 'orders': ytd_orders_out}, ensure_ascii=False, separators=(',',':')) + ';'
+new_ltm_js    = 'const INVOICE_LTM = ' + json.dumps(ltm_months_out, ensure_ascii=False, separators=(',',':')) + ';'
 
 def safe_replace(html, pattern, replacement, label):
     m = re.search(pattern, html, re.DOTALL)
@@ -216,6 +257,7 @@ sales_html = safe_replace(sales_html, r'const ALL_LEADS = \[.*?\];',    new_lead
 sales_html = safe_replace(sales_html, r'const ALL_ACTS2 = \[.*?\];',    new_acts_js,   'ALL_ACTS2')
 sales_html = safe_replace(sales_html, r'const LEAD_META = \[.*?\];',    new_meta_js,   'LEAD_META')
 sales_html = safe_replace(sales_html, r'const INVOICE_YTD = \{[^\n]*\};', new_ytd_js,   'INVOICE_YTD')
+sales_html = safe_replace(sales_html, r'const INVOICE_LTM = \[[^\n]*\];', new_ltm_js,   'INVOICE_LTM')
 
 # ── Inject YTD total directly as static text into the KPI element ────────────
 ytd_total = sum(m['net'] for m in ytd_months_out)

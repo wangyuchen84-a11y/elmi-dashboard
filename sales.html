@@ -457,7 +457,7 @@ canvas.clickable{cursor:pointer}
         <div class="card"><div class="card-t">Volumen nach Stage <span>klick = Deals anzeigen</span></div><div style="height:230px"><canvas id="c1"></canvas></div></div>
         <div class="card"><div class="card-t">Gewichtet je Sales Rep <span>Volumen × Wahrsch. (Stage Config)</span></div><div style="height:230px"><canvas id="c2"></canvas></div></div>
         <div class="card"><div class="card-t">Auftragsvolumen je Sales Rep <span>Brutto-Pipeline</span></div><div style="height:230px"><canvas id="c2b"></canvas></div></div>
-        <div class="card wide"><div class="card-t">Fakturierter Umsatz 2026 <span>nach Monat</span></div><div style="height:170px"><canvas id="c3"></canvas></div></div>
+        <div class="card wide"><div class="card-t">Fakturierter Umsatz <span>LTM – letzte 12 Monate, klickbar</span></div><div style="height:170px"><canvas id="c3"></canvas></div></div>
       </div>
     </div>
 
@@ -1428,13 +1428,13 @@ function openDrawerByStageKey(key){
   });
   document.getElementById('c2b').style.cursor='pointer';
 })();
-// c3 — monthly revenue, klickbar → öffnet Rechnungsdetail-Popup
-const MONTHLY_INVOICES = [[{"number":"RE/2026/00001","partner":"ATEM Networks Deutschland GmbH, Jessica Müller-Feist","net":1000.0,"total":1190.0,"date":"2026-03-11","id":1}],[{"number":"RE/2026/00002","partner":"EFG Cordes & Graefe Brand KG, Peter Dewender","net":134118.26,"total":159600.73,"date":"2026-04-20","id":3},{"number":"RE/2026/00004","partner":"EFG Cordes & Graefe Brand KG","net":86590.45,"total":103042.64,"date":"2026-04-22","id":6}],[{"number":"RE/2026/00005","partner":"HS - C. Hempelmann KG. Hannover","net":125824.5,"total":149731.16,"date":"2026-05-06","id":8},{"number":"RE/2026/00006","partner":"Jolt Energy GmbH","net":40000.0,"total":47600.0,"date":"2026-05-07","id":9},{"number":"RE/2026/00007","partner":"EFG Cordes & Graefe Brand KG, Peter Dewender","net":86590.45,"total":103042.63,"date":"2026-05-18","id":10},{"number":"RE/2026/00008","partner":"EFG Hessen KG, Christian Weißenstein","net":850.0,"total":1011.5,"date":"2026-05-27","id":43},{"number":"RE/2026/00009","partner":"EEFA GmbH, Jan Wojtun","net":1040.2,"total":1237.84,"date":"2026-05-27","id":44}]];
-const MONTH_LABELS = ['März 2026','April 2026','Mai 2026'];
+// c3 — LTM invoice chart, dynamisch aus INVOICE_LTM
+const INVOICE_LTM = [];
 
 function openInvoiceModal(idx) {
-  const invs = MONTHLY_INVOICES[idx] || [];
-  const label = MONTH_LABELS[idx];
+  const mo = INVOICE_LTM[idx] || {};
+  const invs = mo.invoices || [];
+  const label = (mo.label||'').replace(/(\w+) (\d+)/,'$1 20$2');
   const totalNet   = invs.reduce((s,i)=>s+i.net,0);
   const totalGross = invs.reduce((s,i)=>s+i.total,0);
   document.getElementById('odoo-m-title').textContent = 'Fakturierter Umsatz — ' + label;
@@ -1470,16 +1470,20 @@ function openInvoiceModal(idx) {
 }
 
 (function(){
-  const MONTHS=['Mär 26','Apr 26','Mai 26'];
-  const VALS=[1190,262643,302623];
-  const ch=new Chart(document.getElementById('c3'),{type:'bar',
-    data:{labels:MONTHS,datasets:[{label:'Fakturiert EUR',data:VALS,backgroundColor:[C.muted,C.tang,C.red],borderRadius:6,borderSkipped:false}]},
+  const ltm = INVOICE_LTM;
+  if(!ltm.length){
+    document.getElementById('c3').parentElement.innerHTML='<div style="padding:24px;color:var(--fg3);text-align:center">Keine Rechnungsdaten verfügbar</div>';
+    return;
+  }
+  const labels = ltm.map(m=>m.label);
+  const vals   = ltm.map(m=>m.total);
+  // aktueller Monat = letzter Eintrag → rot, Rest gedimmt
+  const colors = ltm.map((_,i)=> i===ltm.length-1 ? C.red : C.muted);
+  new Chart(document.getElementById('c3'),{type:'bar',
+    data:{labels,datasets:[{label:'Brutto EUR',data:vals,backgroundColor:colors,borderRadius:6,borderSkipped:false}]},
     options:{...BASE,plugins:{legend:{display:false}},
-      onClick(e,els){
-        if(!els.length) return;
-        openInvoiceModal(els[0].index);
-      },
-      scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v>=1000?Math.round(v/1000)+'K':v}}}}
+      onClick(e,els){if(els.length) openInvoiceModal(els[0].index);},
+      scales:{x:{...BASE.scales.x},y:{...BASE.scales.y,ticks:{...BASE.scales.y.ticks,callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1000?Math.round(v/1000)+'K':v}}}}
   });
   document.getElementById('c3').style.cursor='pointer';
 })();
