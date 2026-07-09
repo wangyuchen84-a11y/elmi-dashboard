@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>ELMI Power — CRM Sales Dashboard</title>
+<title>⚡ ELMI Sales</title>
+<link rel="icon" type="image/png" href="/elmi-dashboard/assets/elmi-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -2565,6 +2566,56 @@ const INVOICE_YTD = {"months":[{"mo":"2026-03","label":"März 2026","net":1000.0
   if(el) el.textContent=fv(ytd);
   if(el2) el2.textContent=fv(ytd)+' EUR';
 })();
+
+// ── Statische Altdaten: Rechnungen 43–61 (PDF-Rechnungen vor Odoo-Erfassung) ──
+const LEGACY_INVOICES = [
+  {nr:'000043',date:'2026-01-13',partner:'EFG Rheinland KG',net:850.00},
+  {nr:'000044',date:'2026-01-19',partner:'EFG Niederrhein KG',net:5000.00},
+  {nr:'000045',date:'2026-01-19',partner:'MF Energiepartner GmbH',net:79016.37},
+  {nr:'000046',date:'2026-01-19',partner:'Jolt Energy GmbH',net:140000.00},
+  {nr:'000047',date:'2026-01-20',partner:'weEnergize',net:21000.00},
+  {nr:'000048',date:'2026-01-21',partner:'EFG Cordes & Graefe Emden KG',net:68569.00},
+  {nr:'000049',date:'2026-01-22',partner:'Sächsische Haustechnik Edki KG',net:112387.40},
+  {nr:'000050',date:'2026-01-22',partner:'Sächsische Haustechnik Edki KG',net:112387.40},
+  {nr:'000051',date:'2026-01-22',partner:'Sächsische Haustechnik Edki KG',net:112387.40},
+  {nr:'000052',date:'2026-01-27',partner:'Jolt Energy GmbH',net:88775.00},
+  {nr:'000053',date:'2026-02-20',partner:'EFG Niederrhein KG',net:63450.00},
+  {nr:'000054',date:'2026-02-20',partner:'KTM Gebäudetechnik GmbH',net:60000.00},
+  {nr:'000055',date:'2026-02-20',partner:'Jolt Energy GmbH',net:88775.00},
+  {nr:'000056',date:'2026-02-20',partner:'EEFA GmbH',net:82635.00},
+  {nr:'000057',date:'2026-02-20',partner:'MaxSolar GmbH',net:39417.32},
+  {nr:'000058',date:'2026-02-20',partner:'MaxSolar GmbH',net:5475.50},
+  {nr:'000059',date:'2026-02-25',partner:'Sächsische Haustechnik Edki KG',net:48166.03},
+  {nr:'000060',date:'2026-02-25',partner:'Sächsische Haustechnik Edki KG',net:48166.03},
+  {nr:'000061',date:'2026-02-25',partner:'Sächsische Haustechnik Edki KG',net:48166.03},
+];
+const LEGACY_TOTAL = LEGACY_INVOICES.reduce((s,r)=>s+r.net,0); // 1 224 623.48
+
+function openLegacyInvoiceModal() {
+  const fmtLocal = n => n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+  document.getElementById('odoo-m-title').textContent = 'Ältere Ausgangsrechnungen (43–61)';
+  document.getElementById('odoo-m-sub').textContent = 'Statische Daten · Rechnungen vor Odoo-Erfassung · Netto';
+  document.getElementById('odoo-m-stats').innerHTML =
+    `<div class="odoo-m-stat">Rechnungen: <strong>${LEGACY_INVOICES.length}</strong></div>`+
+    `<div class="odoo-m-stat">Netto gesamt: <strong>${fmtLocal(LEGACY_TOTAL)}</strong></div>`;
+  document.getElementById('odoo-m-body').innerHTML = LEGACY_INVOICES.map(r=>`
+    <div class="odoo-deal-row">
+      <div class="odoo-deal-info">
+        <div class="odoo-deal-name">Rechnung ${r.nr} — ${r.partner}</div>
+        <div class="odoo-deal-meta"><span>${r.date}</span></div>
+      </div>
+      <div style="font-family:var(--mono);font-weight:700;font-size:14px;margin-left:auto;padding-right:20px;white-space:nowrap">
+        ${fmtLocal(r.net)}
+      </div>
+    </div>`).join('') +
+    `<div class="odoo-deal-row" style="background:var(--bg2)">
+      <div class="odoo-deal-info">
+        <div class="odoo-deal-name" style="font-weight:800">Gesamt Netto: <strong>${fmtLocal(LEGACY_TOTAL)}</strong></div>
+      </div>
+    </div>`;
+  document.getElementById('odoo-modal-bg').classList.add('open');
+  lucide.createIcons();
+}
 
 // ── renderDashboardKPIs — recomputes all static KPI numbers from stage config ──
 function fmtKpiV(n){
